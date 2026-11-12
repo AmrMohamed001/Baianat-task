@@ -2,6 +2,54 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type SerializedUser {
+  id: Int!
+  username: String!
+  fullname: String!
+  email: String!
+  phone: String
+  image: String
+  createdAt: DateTime
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
 type Query {
   hello: String!
+  user(id: Float!): SerializedUser!
+  users: [SerializedUser!]!
+}
+
+type Mutation {
+  createUser(input: CreateUserDto!): SerializedUser!
+  updateMe(input: UpdateUserDto!): Boolean!
+  updateUser(id: Float!, input: UpdateUserDto!): Boolean!
+  updateRole(id: Float!, role: UserRole!): Boolean!
+  deleteUser(id: Float!): SerializedUser!
+}
+
+input CreateUserDto {
+  username: String!
+  fullname: String!
+  email: String!
+  password: String!
+  phone: String
+  image: String
+}
+
+input UpdateUserDto {
+  username: String
+  fullname: String
+  email: String
+  phone: String
+  image: String
+}
+
+enum UserRole {
+  SuperAdmin
+  Client
+  Vendor
 }

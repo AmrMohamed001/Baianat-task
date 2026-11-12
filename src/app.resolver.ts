@@ -1,5 +1,5 @@
 import { Query, Resolver } from '@nestjs/graphql';
-import { I18nContext, I18nService } from 'nestjs-i18n';
+import { I18nService } from 'nestjs-i18n';
 
 @Resolver()
 export class AppResolver {
@@ -7,6 +7,6 @@ export class AppResolver {
 
   @Query(() => String)
   hello(): string {
-    return this.i18n.t('common.hello', { lang: I18nContext.current()?.lang });
+    return this.i18n.t('common.hello');
   }
 }

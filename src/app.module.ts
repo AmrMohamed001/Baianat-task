@@ -12,6 +12,7 @@ import { LoggerModule } from './common/logger/logger.module.js';
 import { APP_FILTER } from '@nestjs/core';
 import { QueryFailedExceptionFilter } from './common/filters/query-failed.filter.js';
 import { DatabaseModule } from './database/database.module.js';
+import { UserModule } from './user/user.module.js';
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
@@ -37,7 +38,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     I18nModule.forRoot({
       fallbackLanguage: 'ar',
       loaderOptions: {
-        path: join(import.meta.dirname, 'common/i18n'),
+        path: join(__dirname, 'common/i18n'),
         watch: true,
       },
       resolvers: [
@@ -55,6 +56,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     
     LoggerModule,
     DatabaseModule,
+    UserModule
 
   ],
   providers: [

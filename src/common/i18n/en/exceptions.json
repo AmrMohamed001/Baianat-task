@@ -1,0 +1,5 @@
+{
+  "NOT_FOUND_USER": "User not found",
+  "PASSWORD_REQUIRED": "Password is required",
+  "CURRENT_PASS_IS_IN_CORRECT": "Current password is incorrect"
+}
