@@ -1,52 +1,48 @@
+import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Resolver, Query } from '@nestjs/graphql';
 import { User } from './user.entity';
 import { UserRole } from './enums/user-role.enum';
 import { UserService } from './user.service';
 import { currentUser } from '../common/decorators/current-user.decorator';
-import { CreateUserDto } from './dtos/create-user.dto';
-import { UpdateUserDto } from './dtos/update-user.dto';
-import { SerializedUser } from './types/serialized-user.type';
-import { I18nService } from 'nestjs-i18n';
+import { UpdateClientDto } from './dtos/update-client.dto';
+import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
-
-@Resolver(() => SerializedUser)
+@UseGuards(GqlAuthGuard)
+@Resolver(() => User)
 export class UserResolver {
-	constructor(
-		private usersService: UserService,
-		private readonly i18n: I18nService
-	) {}
+	constructor(private usersService: UserService) {}
 
-
-	@Mutation(() => SerializedUser)
-	async createUser(@Args('input') input: CreateUserDto) {
-		return this.usersService.createUser(input);
+	@Query(() => User)
+	me(@currentUser() user: User) {
+		return user;
 	}
 
 	@Mutation(() => Boolean)
-	async updateMe(
-		@Args('input') input: UpdateUserDto,
-		@currentUser() user: Partial<User>
+	async updateMyClientProfile(
+		@Args('input') input: UpdateClientDto,
+		@currentUser() user: User
 	) {
-		return this.usersService.updateUser(user.id!, input);
+		return this.usersService.updateUser(user.id, input);
 	}
 
 	// @Role('admin')
-	@Query(() => SerializedUser)
+	@Query(() => User)
 	async user(@Args('id') id: number) {
 		return this.usersService.findById(id);
 	}
 
 	// @Role('admin')
-	@Query(() => [SerializedUser])
+	@Query(() => [User])
 	async users() {
 		return this.usersService.findAll();
 	}
 
 	// @Role('admin')
+	// TODO(vendor task): take UpdateVendorDto, which has every field.
 	@Mutation(() => Boolean)
 	updateUser(
 		@Args('id') id: number,
-		@Args('input') updateData: UpdateUserDto
+		@Args('input') updateData: UpdateClientDto
 	) {
 		return this.usersService.updateUser(id, updateData);
 	}
@@ -61,7 +57,7 @@ export class UserResolver {
 	}
 
 	// @Role('admin')
-	@Mutation(() => SerializedUser)
+	@Mutation(() => User)
 	async deleteUser(@Args('id') id: number) {
 		return this.usersService.deleteUser(id);
 	}

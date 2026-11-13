@@ -1,5 +1,13 @@
 {
   "NOT_FOUND_USER": "User not found",
   "PASSWORD_REQUIRED": "Password is required",
-  "CURRENT_PASS_IS_IN_CORRECT": "Current password is incorrect"
+  "CURRENT_PASS_IS_INCORRECT": "Current password is incorrect",
+  "EMAIL_ALREADY_USED": "This email is already registered",
+  "INVALID_CREDENTIALS": "Invalid email or password",
+  "ACCOUNT_DEACTIVATED": "This account has been deactivated",
+  "UNAUTHENTICATED": "You must be logged in to do this",
+  "NOT_VALID_TOKEN": "Your login token is invalid, please log in again",
+  "JWT_EXPIRED": "Your session has expired, please log in again",
+  "PASSWORD_AFTER_JWT": "Your password was changed, please log in again",
+  "FORBIDDEN": "You are not allowed to do this"
 }

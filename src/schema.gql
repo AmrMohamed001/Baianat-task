@@ -2,14 +2,22 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type SerializedUser {
+type User {
   id: Int!
   username: String!
   fullname: String!
   email: String!
-  phone: String
   image: String
+  role: UserRole!
+  phone: String
   createdAt: DateTime
+  updatedAt: DateTime
+}
+
+enum UserRole {
+  SuperAdmin
+  Client
+  Vendor
 }
 
 """
@@ -17,39 +25,44 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type AuthPayload {
+  accessToken: String!
+  user: User!
+}
+
 type Query {
   hello: String!
-  user(id: Float!): SerializedUser!
-  users: [SerializedUser!]!
+  me: User!
+  user(id: Float!): User!
+  users: [User!]!
 }
 
 type Mutation {
-  createUser(input: CreateUserDto!): SerializedUser!
-  updateMe(input: UpdateUserDto!): Boolean!
-  updateUser(id: Float!, input: UpdateUserDto!): Boolean!
+  updateMyClientProfile(input: UpdateClientDto!): Boolean!
+  updateUser(id: Float!, input: UpdateClientDto!): Boolean!
   updateRole(id: Float!, role: UserRole!): Boolean!
-  deleteUser(id: Float!): SerializedUser!
+  deleteUser(id: Float!): User!
+  registerClient(input: RegisterClientInput!): String!
+  login(input: LoginInput!): AuthPayload!
 }
 
-input CreateUserDto {
+input UpdateClientDto {
+  username: String
+  fullname: String
+  email: String
+  phone: String
+}
+
+input RegisterClientInput {
   username: String!
   fullname: String!
   email: String!
   password: String!
   phone: String
-  image: String
 }
 
-input UpdateUserDto {
-  username: String
-  fullname: String
-  email: String
-  phone: String
-  image: String
-}
-
-enum UserRole {
-  SuperAdmin
-  Client
-  Vendor
+input LoginInput {
+  """Email or username"""
+  emailOrUsername: String!
+  password: String!
 }

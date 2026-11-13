@@ -1,18 +1,15 @@
 import {
-	BeforeInsert,
-	BeforeUpdate,
 	Column,
 	CreateDateColumn,
 	Entity,
 	Index,
+	OneToOne,
 	PrimaryGeneratedColumn,
 	UpdateDateColumn,
 } from 'typeorm';
-import { hash } from 'bcryptjs';
-import { BadRequestException } from '@nestjs/common';
-import { I18nContext } from 'nestjs-i18n';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { UserRole } from './enums/user-role.enum';
+import { Cart } from '../cart/cart.entity';
 
 @Index(['email'], { unique: true })
 @Entity("sys_users")
@@ -51,6 +48,8 @@ export class User {
 	@Column({ default: false })
 	isVerified: boolean;
 
+	@Column({ default: true })
+	isActive: boolean;
 
 	@Column({ nullable: true })
 	@Field({ nullable: true })
@@ -64,16 +63,6 @@ export class User {
 	@Field({ nullable: true })
 	updatedAt: Date;
 
-	// Runs on create and on `save`. Updates that must not re-hash
-	// (profile, role) use `repo.update`, which skips entity listeners.
-	@BeforeInsert()
-	@BeforeUpdate()
-	async hashPassword() {
-		if (!this.password) {
-			throw new BadRequestException(
-				I18nContext.current()?.t('exceptions.PASSWORD_REQUIRED')
-			);
-		}
-		this.password = await hash(this.password, 12);
-	}
+	@OneToOne(() => Cart, (cart) => cart.user)
+	cart: Cart;
 }
