@@ -105,6 +105,7 @@ Set these in `.env`:
 
 - `JWT_SECRET`: a long random string, for example from `openssl rand -hex 32`.
 - `JWT_EXPIRES_IN`: token lifetime, such as `1d`, `12h` or `900` (seconds).
+- `DT_COMMISSION_RATE`: commission percent given to new vendors, such as `10` or `2.5`.
 
 ## Resources
 

@@ -10,6 +10,8 @@ import {
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { UserRole } from './enums/user-role.enum';
 import { Cart } from '../cart/cart.entity';
+import { Vendor } from '../vendor/vendor.entity';
+import { Wallet } from '../wallet/wallet.entity';
 
 @Index(['email'], { unique: true })
 @Entity("sys_users")
@@ -45,9 +47,6 @@ export class User {
 	@Field(() => UserRole)
 	role: UserRole;
 
-	@Column({ default: false })
-	isVerified: boolean;
-
 	@Column({ default: true })
 	isActive: boolean;
 
@@ -65,4 +64,10 @@ export class User {
 
 	@OneToOne(() => Cart, (cart) => cart.user)
 	cart: Cart;
+
+	@OneToOne(() => Vendor, (vendor) => vendor.owner)
+	vendor: Vendor;
+
+	@OneToOne(() => Wallet, (wallet) => wallet.user)
+	wallet: Wallet;
 }

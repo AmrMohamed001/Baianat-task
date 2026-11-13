@@ -1,4 +1,5 @@
 {
   "hello": "Hello World!",
-  "USER_CREATED": "Account created successfully, please log in"
+  "USER_CREATED": "Account created successfully, please log in",
+  "VENDOR_CREATED": "Vendor account created and is pending approval. You can log in now."
 }
