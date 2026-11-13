@@ -1,3 +1,4 @@
 {
-  "hello": "Hello World!"
+  "hello": "Hello World!",
+  "USER_CREATED": "Account created successfully, please log in"
 }

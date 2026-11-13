@@ -7,12 +7,14 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { I18nModule, QueryResolver, AcceptLanguageResolver } from 'nestjs-i18n';
 import { ConfigService } from '@nestjs/config';
-import { AppResolver } from './app.resolver.js';
-import { LoggerModule } from './common/logger/logger.module.js';
+import { AppResolver } from './app.resolver';
+import { LoggerModule } from './common/logger/logger.module';
 import { APP_FILTER } from '@nestjs/core';
-import { QueryFailedExceptionFilter } from './common/filters/query-failed.filter.js';
-import { DatabaseModule } from './database/database.module.js';
-import { UserModule } from './user/user.module.js';
+import { QueryFailedExceptionFilter } from './common/filters/query-failed.filter';
+import { DatabaseModule } from './database/database.module';
+import { UserModule } from './user/user.module';
+import { CartModule } from './cart/cart.module';
+import { AuthModule } from './auth/auth.module';
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
@@ -56,8 +58,10 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     
     LoggerModule,
     DatabaseModule,
-    UserModule
+    UserModule,
 
+    CartModule,
+    AuthModule,
   ],
   providers: [
     AppResolver,

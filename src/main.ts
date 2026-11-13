@@ -7,7 +7,6 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     instrument: ObserveInstrument,
   });
-  app.setGlobalPrefix('/api');
   app.useBodyParser('json', { limit: '20mb' });
   app.use(morgan(':date[iso] :method :url :status :response-time ms'));
   app.useGlobalPipes(

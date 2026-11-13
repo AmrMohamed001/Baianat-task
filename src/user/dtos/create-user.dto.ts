@@ -1,41 +1,42 @@
 import { Field, InputType } from '@nestjs/graphql';
+import { Transform } from 'class-transformer';
 import {
 	IsEmail,
-	IsNumber,
+	IsNotEmpty,
 	IsOptional,
 	IsPhoneNumber,
 	IsString,
-	IsStrongPassword,
 	Length,
 	MinLength,
 } from 'class-validator';
-@InputType()
-export class CreateUserDto {
+
+@InputType({ isAbstract: true })
+export abstract class CreateUserDto {
 	@IsString()
+	@IsNotEmpty()
 	@Length(5, 12)
 	@Field()
 	username: string;
 
 	@IsString()
+	@IsNotEmpty()
 	@Length(2, 60)
 	@Field()
 	fullname: string;
 
+	@Transform(({ value }) => value?.trim().toLowerCase())
 	@IsEmail()
 	@Field()
 	email: string;
 
 	@IsString()
-	@MinLength(4)
+	@IsNotEmpty()
+	@MinLength(8)
 	@Field()
 	password: string;
-	
-	@IsPhoneNumber('EG')
-	@IsOptional()
-	@Field({ nullable: true })
-	phone: string;
 
 	@IsOptional()
+	@IsPhoneNumber()
 	@Field({ nullable: true })
-	image?: string;
+	phone?: string;
 }

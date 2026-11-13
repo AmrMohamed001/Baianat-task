@@ -97,6 +97,15 @@ Or do it by hand: create an application and an API key at [observe.nestjs.com](h
 
 The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
 
+## Authentication
+
+Clients sign up with the `registerClient` mutation (which also creates their empty cart) and get a JWT from `login`. Send it as `Authorization: Bearer <token>`; the `me` query returns the logged-in user.
+
+Set these in `.env`:
+
+- `JWT_SECRET`: a long random string, for example from `openssl rand -hex 32`.
+- `JWT_EXPIRES_IN`: token lifetime, such as `1d`, `12h` or `900` (seconds).
+
 ## Resources
 
 Check out a few resources that may come in handy when working with NestJS:
