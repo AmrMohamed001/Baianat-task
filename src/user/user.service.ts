@@ -28,7 +28,7 @@ export class UserService {
 
 	async createUser(data: CreateUserDto,role: UserRole,manager?: EntityManager): Promise<User> {
 		const repo = manager ? manager.getRepository(User) : this.userRepo;
-		if (await this.userRepo.exists({ where: { email:data.email } })) throw new ConflictException(this.i18n.t('exceptions.EMAIL_ALREADY_USED'));
+		if (await repo.exists({ where: { email:data.email } })) throw new ConflictException(this.i18n.t('exceptions.EMAIL_ALREADY_USED'));
 
 		const user = repo.create({
 			...data,

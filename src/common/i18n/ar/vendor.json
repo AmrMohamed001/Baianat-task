@@ -1,0 +1,7 @@
+{
+  "status": {
+    "Pending": "قيد المراجعة",
+    "Verified": "موثّق",
+    "Rejected": "مرفوض"
+  }
+}

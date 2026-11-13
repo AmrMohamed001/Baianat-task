@@ -15,6 +15,8 @@ import { DatabaseModule } from './database/database.module';
 import { UserModule } from './user/user.module';
 import { CartModule } from './cart/cart.module';
 import { AuthModule } from './auth/auth.module';
+import { VendorModule } from './vendor/vendor.module';
+import { WalletModule } from './wallet/wallet.module';
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
@@ -35,6 +37,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
 			autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
 			playground: true,
 			path: '/graphql',
+      includeStacktraceInErrorResponses: process.env.NODE_ENV !== 'production',
 		}),
     
     I18nModule.forRoot({
@@ -61,6 +64,8 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     UserModule,
 
     CartModule,
+    VendorModule,
+    WalletModule,
     AuthModule,
   ],
   providers: [

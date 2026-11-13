@@ -43,6 +43,7 @@ type Mutation {
   updateRole(id: Float!, role: UserRole!): Boolean!
   deleteUser(id: Float!): Boolean!
   registerClient(input: RegisterClientInput!): String!
+  registerVendor(input: RegisterVendorInput!): String!
   login(input: LoginInput!): AuthPayload!
 }
 
@@ -59,6 +60,16 @@ input RegisterClientInput {
   email: String!
   password: String!
   phone: String
+}
+
+input RegisterVendorInput {
+  username: String!
+  fullname: String!
+  email: String!
+  password: String!
+  phone: String
+  storeName: String!
+  description: String
 }
 
 input LoginInput {

@@ -6,7 +6,10 @@ import * as bcrypt from 'bcryptjs';
 import { UserService } from '../user/user.service';
 import { CartService } from '../cart/cart.service';
 import { UserRole } from '../user/enums/user-role.enum';
+import { VendorService } from '../vendor/vendor.service';
+import { WalletService } from '../wallet/wallet.service';
 import { RegisterClientInput } from './dtos/register-client.dto';
+import { RegisterVendorInput } from './dtos/register-vendor.dto';
 import { LoginInput } from './dtos/login.dto';
 import { JwtPayload } from './types/jwt-payload.type';
 
@@ -15,6 +18,8 @@ export class AuthService {
 	constructor(
 		private readonly usersService: UserService,
 		private readonly cartService: CartService,
+		private readonly vendorService: VendorService,
+		private readonly walletService: WalletService,
 		private readonly jwtService: JwtService,
 		private readonly dataSource: DataSource,
 		private readonly i18n: I18nService
@@ -24,8 +29,20 @@ export class AuthService {
 		await this.dataSource.transaction(async (manager) => {
 			const user = await this.usersService.createUser(input,UserRole.Client,manager);
 			await this.cartService.createForUser(user.id, manager);
+			return user;
 		});
 		return this.i18n.t('common.USER_CREATED');
+	}
+
+	async registerVendor(input: RegisterVendorInput) {
+		const { storeName, description, ...userData } = input;
+		await this.dataSource.transaction(async (manager) => {
+			const user = await this.usersService.createUser(userData, UserRole.Vendor, manager);
+			await this.vendorService.create(user.id, { storeName, description }, manager);
+			await this.walletService.createForUser(user.id, manager);
+			return user;
+		});
+		return this.i18n.t('common.VENDOR_CREATED');
 	}
 
 	async login(input: LoginInput) {

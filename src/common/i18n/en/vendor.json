@@ -1,0 +1,7 @@
+{
+  "status": {
+    "Pending": "Pending review",
+    "Verified": "Verified",
+    "Rejected": "Rejected"
+  }
+}
