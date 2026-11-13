@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { UserModule } from '../user/user.module';
 import { CartModule } from '../cart/cart.module';
 import { AuthService } from './auth.service';
 import { AuthResolver } from './auth.resolver';
-import { GqlAuthGuard } from './guards/gql-auth.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
 
 @Module({
 	imports: [
@@ -20,7 +22,11 @@ import { GqlAuthGuard } from './guards/gql-auth.guard';
 			})
 		})
 	],
-	providers: [AuthService, AuthResolver, GqlAuthGuard],
-	exports: [GqlAuthGuard],
+	providers: [
+		AuthService,
+		AuthResolver,
+		{ provide: APP_GUARD, useClass: JwtAuthGuard },
+		{ provide: APP_GUARD, useClass: RolesGuard },
+	],
 })
 export class AuthModule {}

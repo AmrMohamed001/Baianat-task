@@ -41,7 +41,7 @@ type Mutation {
   updateMyClientProfile(input: UpdateClientDto!): Boolean!
   updateUser(id: Float!, input: UpdateClientDto!): Boolean!
   updateRole(id: Float!, role: UserRole!): Boolean!
-  deleteUser(id: Float!): User!
+  deleteUser(id: Float!): Boolean!
   registerClient(input: RegisterClientInput!): String!
   login(input: LoginInput!): AuthPayload!
 }

@@ -4,6 +4,7 @@ import {
 	Injectable,
 	UnauthorizedException,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import { JwtService, TokenExpiredError } from '@nestjs/jwt';
 import { I18nService } from 'nestjs-i18n';
@@ -12,8 +13,9 @@ import { User } from '../../user/user.entity';
 import { JwtPayload } from '../types/jwt-payload.type';
 
 @Injectable()
-export class GqlAuthGuard implements CanActivate {
+export class JwtAuthGuard implements CanActivate {
 	constructor(
+		private readonly reflector: Reflector,
 		private readonly jwtService: JwtService,
 		private readonly usersService: UserService,
 		private readonly i18n: I18nService
@@ -25,6 +27,9 @@ export class GqlAuthGuard implements CanActivate {
 	}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
+		const isPublic = this.reflector.getAllAndOverride('isPublic', [context.getHandler(),context.getClass()]);
+		if (isPublic) return true;
+
 		const { req } = GqlExecutionContext.create(context).getContext();
 		const [bearer, token] = req?.headers?.authorization?.split(' ') ?? [];
 
