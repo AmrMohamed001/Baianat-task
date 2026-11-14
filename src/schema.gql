@@ -2,6 +2,30 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Vendor {
+  id: Int!
+  ownerId: Int!
+  storeName: String!
+  description: String
+  status: VendorStatus!
+  commissionRate: Float!
+  reviewedBy: Int
+  reviewedAt: DateTime
+  rejectionReason: String
+  createdAt: DateTime!
+}
+
+enum VendorStatus {
+  Pending
+  Verified
+  Rejected
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
 type User {
   id: Int!
   username: String!
@@ -20,11 +44,6 @@ enum UserRole {
   Vendor
 }
 
-"""
-A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
-"""
-scalar DateTime
-
 type AuthPayload {
   accessToken: String!
   user: User!
@@ -42,8 +61,8 @@ type Mutation {
   updateUser(id: Float!, input: UpdateClientDto!): Boolean!
   updateRole(id: Float!, role: UserRole!): Boolean!
   deleteUser(id: Float!): Boolean!
-  approveVendor(vendorId: Int!): String!
-  rejectVendor(vendorId: Int!, input: RejectVendorInput): String!
+  approveVendor(vendorId: Int!): Vendor!
+  rejectVendor(vendorId: Int!, input: RejectVendorInput): Vendor!
   registerClient(input: RegisterClientInput!): String!
   registerVendor(input: RegisterVendorInput!): String!
   login(input: LoginInput!): AuthPayload!

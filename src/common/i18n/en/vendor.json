@@ -3,7 +3,5 @@
     "Pending": "Pending review",
     "Verified": "Verified",
     "Rejected": "Rejected"
-  },
-  "APPROVED": "Vendor approved",
-  "REJECTED": "Vendor rejected"
+  }
 }

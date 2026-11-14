@@ -43,15 +43,13 @@ export class VendorService {
     if (vendor.status === VendorStatus.Verified)
       throw new BadRequestException(this.i18n.t('exceptions.VENDOR_ALREADY_VERIFIED'));
 
-    const res = await this.vendorRepo.update(
-      { id: vendorId, status: vendor.status }, // race guard instead of transacs
-      { status: VendorStatus.Verified, approvedBy: adminId, approvedAt: new Date(), rejectionReason: null },
-    );
+    const changes = { status: VendorStatus.Verified, reviewedBy: adminId, reviewedAt: new Date(), rejectionReason: null };
+    const res = await this.vendorRepo.update({ id: vendorId, status: vendor.status }, changes); // race guard instead of transacs
     if (!res.affected) throw new ConflictException(this.i18n.t('exceptions.VENDOR_ALREADY_DECIDED'));
 
     this.mailQueue.add('vendor-approved', { vendorId, ownerId: vendor.ownerId })
       .catch((e) => this.logger.error(e.message, e.stack));
-    return this.i18n.t('vendor.APPROVED');
+    return Object.assign(vendor, changes);
   }
 
   async reject(vendorId: number, adminId: number, reason?: string | null) {
@@ -62,14 +60,12 @@ export class VendorService {
     if (vendor.status === VendorStatus.Rejected)
       throw new BadRequestException(this.i18n.t('exceptions.VENDOR_ALREADY_REJECTED'));
 
-    const res = await this.vendorRepo.update(
-      { id: vendorId, status: vendor.status }, 
-      { status: VendorStatus.Rejected, approvedBy: adminId, approvedAt: new Date(), rejectionReason: reason || null },
-    );
+    const changes = { status: VendorStatus.Rejected, reviewedBy: adminId, reviewedAt: new Date(), rejectionReason: reason || null };
+    const res = await this.vendorRepo.update({ id: vendorId, status: vendor.status }, changes);
     if (!res.affected) throw new ConflictException(this.i18n.t('exceptions.VENDOR_ALREADY_DECIDED'));
 
-    this.mailQueue.add('vendor-rejected', { vendorId, ownerId: vendor.ownerId, reason: reason || null })
+    this.mailQueue.add('vendor-rejected', { vendorId, ownerId: vendor.ownerId, reason: changes.rejectionReason })
       .catch((e) => this.logger.error(e.message, e.stack));
-    return this.i18n.t('vendor.REJECTED');
+    return Object.assign(vendor, changes);
   }
 }

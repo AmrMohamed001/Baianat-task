@@ -8,16 +8,20 @@ import {
 	PrimaryGeneratedColumn,
 	UpdateDateColumn,
 } from 'typeorm';
+import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
 import { User } from '../user/user.entity';
 import { VendorStatus } from './enums/vendor-status.enum';
 
 
 @Entity('sys_vendors')
+@ObjectType()
 export class Vendor {
 	@PrimaryGeneratedColumn()
+	@Field(() => Int)
 	id: number;
 
 	@Column()
+	@Field(() => Int)
 	ownerId: number;
 
 	@OneToOne(() => User, (user) => user.vendor, { onDelete: 'CASCADE' })
@@ -25,12 +29,15 @@ export class Vendor {
 	owner: User;
 
 	@Column({ type: 'varchar', length: 60 })
+	@Field()
 	storeName: string;
 
 	@Column({ type: 'varchar', length: 500, nullable: true })
+	@Field(() => String, { nullable: true })
 	description: string | null;
 
 	@Column({ type: 'enum', enum: VendorStatus, default: VendorStatus.Pending })
+	@Field(() => VendorStatus)
 	status: VendorStatus;
 
 	// commission the platform (rate)
@@ -41,22 +48,27 @@ export class Vendor {
 		default: 10,
 		transformer: { to: (v: number) => v, from: (v: string) => Number(v) },
 	})
+	@Field(() => Float)
 	commissionRate: number;
 
 	@Column({ type: 'int', nullable: true })
-	approvedBy: number | null;
+	@Field(() => Int, { nullable: true })
+	reviewedBy: number | null;
 
 	@ManyToOne(() => User, { onDelete: 'SET NULL', nullable: true })
-	@JoinColumn({ name: 'approvedBy' })
-	approver: User | null;
+	@JoinColumn({ name: 'reviewedBy' })
+	reviewer: User | null;
 
 	@Column({ type: 'timestamptz', nullable: true })
-	approvedAt: Date | null;
+	@Field(() => Date, { nullable: true })
+	reviewedAt: Date | null;
 
 	@Column({ type: 'varchar', length: 500, nullable: true })
+	@Field(() => String, { nullable: true })
 	rejectionReason: string | null;
 
 	@CreateDateColumn()
+	@Field()
 	createdAt: Date;
 
 	@UpdateDateColumn()
