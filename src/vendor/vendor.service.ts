@@ -7,6 +7,8 @@ import { I18nService } from 'nestjs-i18n';
 import { EntityManager, Repository } from 'typeorm';
 import { Vendor } from './vendor.entity';
 import { VendorStatus } from './enums/vendor-status.enum';
+import { VendorsArgs } from './dtos/vendors.args';
+import { paginate } from '../common/query/paginate';
 
 export interface CreateVendorData {
   storeName: string;
@@ -39,6 +41,25 @@ export class VendorService {
 
   findByOwner(ownerId: number) {
     return this.vendorRepo.findOne({ where: { ownerId } });
+  }
+
+  async findMyStore(ownerId: number) {
+    const vendor = await this.findByOwner(ownerId);
+    if (!vendor) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_VENDOR'));
+    return vendor;
+  }
+
+  findAll(args: VendorsArgs) {
+    const qb = this.vendorRepo.createQueryBuilder('v').orderBy('v.createdAt', 'DESC').addOrderBy('v.id', 'DESC');
+    if (args.status) qb.andWhere('v.status = :status', { status: args.status });
+    return paginate(qb, args);
+  }
+
+  async setCommission(vendorId: number, commissionRate: number) {
+    const vendor = await this.vendorRepo.findOne({ where: { id: vendorId } });
+    if (!vendor) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_VENDOR'));
+    await this.vendorRepo.update(vendorId, { commissionRate });
+    return Object.assign(vendor, { commissionRate });
   }
 
   async approve(vendorId: number, adminId: number) {

@@ -48,6 +48,7 @@ export class User {
 	role: UserRole;
 
 	@Column({ default: true })
+	@Field()
 	isActive: boolean;
 
 	@Column({ nullable: true })

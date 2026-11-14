@@ -4,8 +4,10 @@ import {
 	Injectable,
 	NotFoundException,
 } from '@nestjs/common';
-import { EntityManager, Repository } from 'typeorm';
+import { DataSource, EntityManager, Not, Repository } from 'typeorm';
 import { User } from './user.entity';
+import { Vendor } from '../vendor/vendor.entity';
+import { UpdateVendorDto } from './dtos/update-vendor.dto';
 import { UserRole } from './enums/user-role.enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from './dtos/create-user.dto';
@@ -13,11 +15,14 @@ import { UpdateClientDto } from './dtos/update-client.dto';
 import { UpdatePasswordDto } from './dtos/update-password.dto';
 import * as bcrypt from 'bcryptjs';
 import { I18nService } from 'nestjs-i18n';
+import { UsersArgs } from './dtos/users.args';
+import { paginate } from '../common/query/paginate';
 
 @Injectable()
 export class UserService {
 	constructor(
 		@InjectRepository(User) private userRepo: Repository<User>,
+		private readonly dataSource: DataSource,
 		private readonly i18n: I18nService
 	) {}
 
@@ -39,7 +44,12 @@ export class UserService {
 		return repo.save(user);
 	}
 	//#region Find 
-	findAll() {return this.userRepo.find()}
+	findAll(args: UsersArgs) {
+		const qb = this.userRepo.createQueryBuilder('u').orderBy('u.createdAt', 'DESC').addOrderBy('u.id', 'DESC');
+		if (args.role) qb.andWhere('u.role = :role', { role: args.role });
+		if (args.isActive != null) qb.andWhere('u.isActive = :isActive', { isActive: args.isActive });
+		return paginate(qb, args);
+	}
 	 
 	async findByEmailOrUsername(emailOrUsername: string) {
 		return this.userRepo.findOne({where: [{ email: emailOrUsername.toLowerCase() }, { username: emailOrUsername }]});
@@ -69,13 +79,30 @@ export class UserService {
 		return this.userRepo.save(user);
 	}
 
-	async updateUser(id: number, body: UpdateClientDto) {
-		if (body.email && (await this.userRepo.exists({ where: { email: body.email } })))
-			throw new ConflictException(this.i18n.t('exceptions.EMAIL_ALREADY_USED'));
+	async updateUser(id: number, body: UpdateClientDto | UpdateVendorDto) {
+		const { storeName, description, ...userData } = body as UpdateVendorDto;
+		const isStoreUpdate = storeName !== undefined || description !== undefined;
 
-		const { affected } = await this.userRepo.update(id, body);
-		if (!affected) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_USER'));
-		return true;
+		return this.dataSource.transaction(async (m) => {
+			const user = await m.findOneBy(User, { id });
+			if (!user) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_USER'));
+			if (isStoreUpdate && user.role !== UserRole.Vendor)
+				throw new BadRequestException(this.i18n.t('exceptions.NOT_A_VENDOR'));
+			if (userData.email && (await m.existsBy(User, { email: userData.email, id: Not(id) })))
+				throw new ConflictException(this.i18n.t('exceptions.EMAIL_ALREADY_USED'));
+
+			await m.save(User, Object.assign(user, userData));
+			if (isStoreUpdate) await m.update(Vendor, { ownerId: id }, { storeName, description });
+			return true;
+		});
+	}
+
+	async setActive(userId: number, isActive: boolean, adminId: number) {
+		if (userId === adminId && !isActive) throw new BadRequestException(this.i18n.t('exceptions.CANNOT_DEACTIVATE_SELF'));
+
+		const user = await this.findById(userId);
+		await this.userRepo.update(userId, { isActive });
+		return Object.assign(user, { isActive });
 	}
 
 	async updateRole(id: number, role: UserRole) {
