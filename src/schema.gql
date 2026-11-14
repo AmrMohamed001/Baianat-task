@@ -54,12 +54,43 @@ type AuthPayload {
   user: User!
 }
 
+type Follower {
+  id: Int!
+  name: String!
+  followedAt: DateTime!
+}
+
+type PaginatedFollowers {
+  data: [Follower!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+}
+
+type PublicVendor {
+  id: Int!
+  storeName: String!
+  description: String
+  followersCount: Int!
+}
+
+type PaginatedPublicVendors {
+  data: [PublicVendor!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+}
+
 type Query {
   hello: String!
   me: User!
   user(id: Float!): User!
   users: [User!]!
   myWallet: Wallet!
+  myFollowings(page: Int! = 1, limit: Int! = 20): PaginatedPublicVendors!
+  myFollowers(page: Int! = 1, limit: Int! = 20): PaginatedFollowers!
 }
 
 type Mutation {
@@ -69,6 +100,8 @@ type Mutation {
   deleteUser(id: Float!): Boolean!
   approveVendor(vendorId: Int!): Vendor!
   rejectVendor(vendorId: Int!, input: RejectVendorInput): Vendor!
+  followVendor(vendorId: Int!): PublicVendor!
+  unfollowVendor(vendorId: Int!): PublicVendor!
   registerClient(input: RegisterClientInput!): String!
   registerVendor(input: RegisterVendorInput!): String!
   login(input: LoginInput!): AuthPayload!
