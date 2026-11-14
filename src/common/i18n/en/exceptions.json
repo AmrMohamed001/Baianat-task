@@ -16,5 +16,9 @@
   "NOT_VALID_TOKEN": "Your login token is invalid, please log in again",
   "JWT_EXPIRED": "Your session has expired, please log in again",
   "PASSWORD_AFTER_JWT": "Your password was changed, please log in again",
-  "FORBIDDEN": "You are not allowed to do this"
+  "FORBIDDEN": "You are not allowed to do this",
+  "NOT_FOUND_VENDOR": "Vendor not found",
+  "VENDOR_ALREADY_VERIFIED": "This vendor is already verified",
+  "VENDOR_ALREADY_REJECTED": "This vendor is already rejected",
+  "VENDOR_ALREADY_DECIDED": "This vendor was just decided by another admin, please refresh"
 }

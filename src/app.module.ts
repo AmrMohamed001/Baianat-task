@@ -11,12 +11,14 @@ import { AppResolver } from './app.resolver';
 import { LoggerModule } from './common/logger/logger.module';
 import { APP_FILTER } from '@nestjs/core';
 import { QueryFailedExceptionFilter } from './common/filters/query-failed.filter';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { DatabaseModule } from './database/database.module';
 import { UserModule } from './user/user.module';
 import { CartModule } from './cart/cart.module';
 import { AuthModule } from './auth/auth.module';
 import { VendorModule } from './vendor/vendor.module';
 import { WalletModule } from './wallet/wallet.module';
+import { BullModule } from '@nestjs/bullmq';
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
@@ -59,6 +61,17 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
 			},
 		]),
     
+    BullModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        connection: {
+          host: config.get('REDIS_HOST'),
+          port: Number(config.get('REDIS_PORT')),
+          enableOfflineQueue: false,
+        },
+      }),
+    }),
+
     LoggerModule,
     DatabaseModule,
     UserModule,
@@ -74,6 +87,10 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
 			provide: APP_FILTER,
 			useClass: QueryFailedExceptionFilter,
 		},
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
   ],
 })
 export class AppModule {}
