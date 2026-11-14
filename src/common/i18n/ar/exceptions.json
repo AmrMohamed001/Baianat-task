@@ -20,5 +20,8 @@
   "NOT_FOUND_VENDOR": "التاجر غير موجود",
   "VENDOR_ALREADY_VERIFIED": "هذا التاجر موثّق بالفعل",
   "VENDOR_ALREADY_REJECTED": "هذا التاجر مرفوض بالفعل",
-  "VENDOR_ALREADY_DECIDED": "تم اتخاذ قرار بشأن هذا التاجر للتو من قبل مشرف آخر، يرجى التحديث"
+  "VENDOR_ALREADY_DECIDED": "تم اتخاذ قرار بشأن هذا التاجر للتو من قبل مشرف آخر، يرجى التحديث",
+  "VENDOR_NOT_APPROVED": "لم تتم الموافقة على حساب التاجر بعد",
+  "NOT_OWNER": "لا تملك هذا المورد",
+  "NOT_FOUND_WALLET": "المحفظة غير موجودة"
 }

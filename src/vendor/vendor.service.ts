@@ -37,6 +37,10 @@ export class VendorService {
     return repo.save(vendor);
   }
 
+  findByOwner(ownerId: number) {
+    return this.vendorRepo.findOne({ where: { ownerId } });
+  }
+
   async approve(vendorId: number, adminId: number) {
     const vendor = await this.vendorRepo.findOne({ where: { id: vendorId } });
     if (!vendor) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_VENDOR'));
