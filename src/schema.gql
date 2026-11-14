@@ -42,6 +42,8 @@ type Mutation {
   updateUser(id: Float!, input: UpdateClientDto!): Boolean!
   updateRole(id: Float!, role: UserRole!): Boolean!
   deleteUser(id: Float!): Boolean!
+  approveVendor(vendorId: Int!): String!
+  rejectVendor(vendorId: Int!, input: RejectVendorInput): String!
   registerClient(input: RegisterClientInput!): String!
   registerVendor(input: RegisterVendorInput!): String!
   login(input: LoginInput!): AuthPayload!
@@ -52,6 +54,10 @@ input UpdateClientDto {
   fullname: String
   email: String
   phone: String
+}
+
+input RejectVendorInput {
+  reason: String
 }
 
 input RegisterClientInput {

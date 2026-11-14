@@ -53,6 +53,9 @@ export class Vendor {
 	@Column({ type: 'timestamptz', nullable: true })
 	approvedAt: Date | null;
 
+	@Column({ type: 'varchar', length: 500, nullable: true })
+	rejectionReason: string | null;
+
 	@CreateDateColumn()
 	createdAt: Date;
 
