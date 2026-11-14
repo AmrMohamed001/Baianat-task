@@ -20,5 +20,8 @@
   "NOT_FOUND_VENDOR": "Vendor not found",
   "VENDOR_ALREADY_VERIFIED": "This vendor is already verified",
   "VENDOR_ALREADY_REJECTED": "This vendor is already rejected",
-  "VENDOR_ALREADY_DECIDED": "This vendor was just decided by another admin, please refresh"
+  "VENDOR_ALREADY_DECIDED": "This vendor was just decided by another admin, please refresh",
+  "VENDOR_NOT_APPROVED": "Vendor not approved yet",
+  "NOT_OWNER": "You don't own this resource",
+  "NOT_FOUND_WALLET": "Wallet not found"
 }

@@ -10,6 +10,7 @@ import { AuthService } from './auth.service';
 import { AuthResolver } from './auth.resolver';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { VerifiedVendorGuard } from '../vendor/guards/verified-vendor.guard';
 
 @Module({
 	imports: [
@@ -31,6 +32,7 @@ import { RolesGuard } from './guards/roles.guard';
 		AuthResolver,
 		{ provide: APP_GUARD, useClass: JwtAuthGuard },
 		{ provide: APP_GUARD, useClass: RolesGuard },
+		{ provide: APP_GUARD, useClass: VerifiedVendorGuard },
 	],
 })
 export class AuthModule {}
