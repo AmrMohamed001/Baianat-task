@@ -23,5 +23,7 @@
   "VENDOR_ALREADY_DECIDED": "This vendor was just decided by another admin, please refresh",
   "VENDOR_NOT_APPROVED": "Vendor not approved yet",
   "NOT_OWNER": "You don't own this resource",
-  "NOT_FOUND_WALLET": "Wallet not found"
+  "NOT_FOUND_WALLET": "Wallet not found",
+  "CANNOT_DEACTIVATE_SELF": "You cannot deactivate your own account",
+  "NOT_A_VENDOR": "This user is not a vendor"
 }

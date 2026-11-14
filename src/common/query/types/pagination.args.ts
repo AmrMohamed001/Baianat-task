@@ -8,7 +8,7 @@ export class PaginationArgs {
 	page: number = 1;
 
 	@Min(1)
-	@Max(50)
+	@Max(100)
 	@Field(() => Int, { defaultValue: 20 })
 	limit: number = 20;
 }
