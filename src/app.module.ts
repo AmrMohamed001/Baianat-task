@@ -19,6 +19,7 @@ import { AuthModule } from './auth/auth.module';
 import { VendorModule } from './vendor/vendor.module';
 import { WalletModule } from './wallet/wallet.module';
 import { FollowModule } from './follow/follow.module';
+import { CategoryModule } from './category/category.module';
 import { BullModule } from '@nestjs/bullmq';
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -81,6 +82,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     VendorModule,
     WalletModule,
     FollowModule,
+    CategoryModule,
     AuthModule,
   ],
   providers: [

@@ -100,6 +100,18 @@ type PaginatedPublicVendors {
   totalPages: Int!
 }
 
+type Category {
+  id: Int!
+  nameAr: String!
+  nameEn: String!
+  createdAt: DateTime!
+}
+
+type PublicCategory {
+  id: Int!
+  name: String!
+}
+
 type Query {
   hello: String!
   me: User!
@@ -110,6 +122,7 @@ type Query {
   myWallet: Wallet!
   myFollowings(page: Int! = 1, limit: Int! = 20): PaginatedPublicVendors!
   myFollowers(page: Int! = 1, limit: Int! = 20): PaginatedFollowers!
+  categories: [PublicCategory!]!
 }
 
 type Mutation {
@@ -124,6 +137,9 @@ type Mutation {
   rejectVendor(vendorId: Int!, input: RejectVendorInput): Vendor!
   followVendor(vendorId: Int!): PublicVendor!
   unfollowVendor(vendorId: Int!): PublicVendor!
+  createCategory(input: CreateCategoryInput!): Category!
+  updateCategory(id: Int!, input: UpdateCategoryInput!): Category!
+  deleteCategory(id: Int!): Boolean!
   registerClient(input: RegisterClientInput!): String!
   registerVendor(input: RegisterVendorInput!): String!
   login(input: LoginInput!): AuthPayload!
@@ -147,6 +163,16 @@ input UpdateVendorDto {
 
 input RejectVendorInput {
   reason: String
+}
+
+input CreateCategoryInput {
+  nameAr: String!
+  nameEn: String!
+}
+
+input UpdateCategoryInput {
+  nameAr: String
+  nameEn: String
 }
 
 input RegisterClientInput {

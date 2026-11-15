@@ -25,5 +25,6 @@
   "NOT_OWNER": "لا تملك هذا المورد",
   "NOT_FOUND_WALLET": "المحفظة غير موجودة",
   "CANNOT_DEACTIVATE_SELF": "لا يمكنك تعطيل حسابك",
-  "NOT_A_VENDOR": "هذا المستخدم ليس تاجرًا"
+  "NOT_A_VENDOR": "هذا المستخدم ليس تاجرًا",
+  "NOT_FOUND_CATEGORY": "التصنيف غير موجود"
 }

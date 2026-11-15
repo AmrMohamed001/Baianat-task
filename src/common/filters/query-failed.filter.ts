@@ -12,7 +12,7 @@ export class QueryFailedExceptionFilter implements GqlExceptionFilter {
     const { code, detail = '' } = exception.driverError;
 
     if (code === '23505') { //unique violation
-      const field = detail.slice(detail.indexOf('(') + 1, detail.indexOf(')=')).replace(/lower\(|"|::\w+|\)/g, '');
+      const field = detail.slice(detail.indexOf('(') + 1, detail.indexOf(')=')).replace(/lower\(|"|::\w+|[()]/g, '');
       const label = this.i18n.t(`fields.${field}`, { defaultValue: field });
       return new GraphQLError(this.i18n.t('exceptions.DUPLICATE_FIELD', { args: { field: label } }), {
         extensions: { code: 'DUPLICATE_FIELD', field },
