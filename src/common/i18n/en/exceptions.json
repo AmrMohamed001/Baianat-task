@@ -25,5 +25,6 @@
   "NOT_OWNER": "You don't own this resource",
   "NOT_FOUND_WALLET": "Wallet not found",
   "CANNOT_DEACTIVATE_SELF": "You cannot deactivate your own account",
-  "NOT_A_VENDOR": "This user is not a vendor"
+  "NOT_A_VENDOR": "This user is not a vendor",
+  "NOT_FOUND_CATEGORY": "Category not found"
 }

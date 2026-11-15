@@ -1,5 +1,7 @@
 {
   "email": "Email",
   "username": "Username",
-  "storeName": "Store name"
+  "storeName": "Store name",
+  "nameAr": "Arabic name",
+  "nameEn": "English name"
 }
