@@ -112,6 +112,7 @@ type Product {
   stock: Int!
   createdAt: DateTime!
   updatedAt: DateTime!
+  inStock: Boolean!
 }
 
 type Category {
@@ -146,7 +147,30 @@ type Query {
   myFollowers(page: Int! = 1, limit: Int! = 20): PaginatedFollowers!
   categories: [PublicCategory!]!
   myProducts(page: Int! = 1, limit: Int! = 20): PaginatedProducts!
-  products(page: Int! = 1, limit: Int! = 20, vendorId: Int): PaginatedProducts!
+  products(
+    page: Int! = 1
+    limit: Int! = 20
+    vendorId: Int
+    categoryIds: [Int!]
+
+    """cents"""
+    minPrice: Int
+
+    """cents"""
+    maxPrice: Int
+    sortBy: ProductSortField! = createdAt
+    order: SortOrder! = DESC
+  ): PaginatedProducts!
+}
+
+enum ProductSortField {
+  createdAt
+  price
+}
+
+enum SortOrder {
+  ASC
+  DESC
 }
 
 type Mutation {

@@ -8,7 +8,9 @@ import { Vendor } from '../vendor/vendor.entity';
 import { VendorStatus } from '../vendor/enums/vendor-status.enum';
 import { CreateProductInput } from './dtos/create-product.dto';
 import { UpdateProductInput } from './dtos/update-product.dto';
-import { PaginationArgs } from '../common/query/types/pagination.args';
+import { ProductsArgs } from './dtos/products.args';
+import { ProductSortField } from './enums/product-sort.enum';
+import { SortOrder } from '../common/query/enums/sort-order.enum';
 import { paginate } from '../common/query/paginate';
 
 @Injectable()
@@ -58,17 +60,26 @@ export class ProductService {
 		await this.productRepo.softDelete(id);
 		return true;
 	}
+	async findAll(args: ProductsArgs, vendorId?: number) {
+		// #region Query Builder
+		const allowed_vendors_sq=`SELECT vendor.id 
+				FROM sys_vendors vendor
+    			JOIN sys_users "user" ON "user".id = vendor."ownerId"
+    			WHERE vendor.status = :status AND "user"."isActive"`
+		// #endregion
+		const { categoryIds, minPrice, maxPrice, sortBy = ProductSortField.createdAt, order = SortOrder.DESC } = args;
+		if (minPrice != null && maxPrice != null && minPrice > maxPrice) throw new BadRequestException(this.i18n.t('exceptions.MIN_PRICE_GT_MAX'));
 
-	findAll(args: PaginationArgs, vendorId?: number) {
-		const qb = this.productRepo
-			.createQueryBuilder('product')
-			.innerJoin('product.vendor', 'vendor')
-			.innerJoin('vendor.owner', 'user')
-			.where('vendor.status = :status', { status: VendorStatus.Verified })
-			.andWhere('user.isActive = true')
-			.orderBy('product.createdAt', 'DESC')
-			.addOrderBy('product.id', 'DESC');
+		const qb = this.productRepo.createQueryBuilder('product')
+    			.where(`product.vendorId IN (${allowed_vendors_sq})`, { status: VendorStatus.Verified });
+		// filtering
 		if (vendorId) qb.andWhere('product.vendorId = :vendorId', { vendorId });
+		if (categoryIds?.length) qb.andWhere('product.categoryId IN (:...categoryIds)', { categoryIds });
+		if (minPrice != null) qb.andWhere('product.price >= :minPrice', { minPrice });
+		if (maxPrice != null) qb.andWhere('product.price <= :maxPrice', { maxPrice });
+		// sorting
+		qb.orderBy(`product.${sortBy}`, order).addOrderBy('product.id', order);
+		// paging
 		return paginate(qb, args);
 	}
 }

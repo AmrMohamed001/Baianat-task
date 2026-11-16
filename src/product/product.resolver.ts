@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Int, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { I18nService } from 'nestjs-i18n';
 import { ProductService } from './product.service';
 import { Product } from './product.entity';
@@ -53,5 +53,10 @@ export class ProductResolver {
 	@Query(() => PaginatedProducts)
 	products(@Args() args: ProductsArgs) {
 		return this.productService.findAll(args, args.vendorId);
+	}
+
+	@ResolveField(() => Boolean)
+	inStock(@Parent() product: Product) {
+		return product.stock > 0;
 	}
 }
