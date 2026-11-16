@@ -146,6 +146,7 @@ type Query {
   myFollowers(page: Int! = 1, limit: Int! = 20): PaginatedFollowers!
   categories: [PublicCategory!]!
   myProducts(page: Int! = 1, limit: Int! = 20): PaginatedProducts!
+  products(page: Int! = 1, limit: Int! = 20, vendorId: Int): PaginatedProducts!
 }
 
 type Mutation {
@@ -211,6 +212,9 @@ input CreateProductInput {
   price: Int!
   stock: Int!
   categoryId: Int!
+
+  """required for admin"""
+  vendorId: Int
 }
 
 input UpdateProductInput {

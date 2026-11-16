@@ -43,4 +43,9 @@ export class CreateProductInput {
 	@IsInt()
 	@Field(() => Int)
 	categoryId: number;
+
+	@IsOptional()
+	@IsInt()
+	@Field(() => Int, { nullable: true, description: 'required for admin' })
+	vendorId?: number;
 }

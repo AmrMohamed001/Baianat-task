@@ -28,6 +28,7 @@
   "NOT_A_VENDOR": "This user is not a vendor",
   "NOT_FOUND_CATEGORY": "Category not found",
   "NOT_FOUND_PRODUCT": "Product not found",
+  "VENDOR_ID_REQUIRED": "Vendor id is required",
   "CATEGORY_HAS_PRODUCTS": "This category still has products, move them to another category first",
   "EMPTY_UPDATE": "Send at least one field to update"
 }

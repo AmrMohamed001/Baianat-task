@@ -6,10 +6,12 @@ import { Product } from './product.entity';
 import { CreateProductInput } from './dtos/create-product.dto';
 import { UpdateProductInput } from './dtos/update-product.dto';
 import { PaginatedProducts } from './dtos/paginated-products.type';
+import { ProductsArgs } from './dtos/products.args';
 import { Vendor } from '../vendor/vendor.entity';
 import { VerifiedVendor } from '../vendor/decorators/verified-vendor.decorator';
 import { CurrentVendor } from '../vendor/decorators/current-vendor.decorator';
 import { PaginationArgs } from '../common/query/types/pagination.args';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Resolver(() => Product)
 export class ProductResolver {
@@ -20,9 +22,8 @@ export class ProductResolver {
 
 	@VerifiedVendor()
 	@Mutation(() => Product)
-	createProduct(@Args('input') input: CreateProductInput, @CurrentVendor() vendor: Vendor) {
-		if (!vendor) throw new ForbiddenException(this.i18n.t('exceptions.FORBIDDEN')); // admin: no vendor
-		return this.productService.create(vendor.id, input);
+	createProduct(@Args('input') input: CreateProductInput, @CurrentVendor() vendor?: Vendor) {
+		return this.productService.create(input, vendor?.id);
 	}
 
 	@VerifiedVendor()
@@ -30,10 +31,9 @@ export class ProductResolver {
 	updateProduct(
 		@Args('id', { type: () => Int }) id: number,
 		@Args('input') input: UpdateProductInput,
-		@CurrentVendor() vendor: Vendor
+		@CurrentVendor() vendor?: Vendor
 	) {
-		if (!vendor) throw new ForbiddenException(this.i18n.t('exceptions.FORBIDDEN'));
-		return this.productService.update(vendor.id, id, input);
+		return this.productService.update(id, input, vendor?.id);
 	}
 
 	@VerifiedVendor()
@@ -46,6 +46,12 @@ export class ProductResolver {
 	@Query(() => PaginatedProducts)
 	myProducts(@Args() args: PaginationArgs, @CurrentVendor() vendor: Vendor) {
 		if (!vendor) throw new ForbiddenException(this.i18n.t('exceptions.FORBIDDEN'));
-		return this.productService.myProducts(vendor.id, args);
+		return this.productService.findAll(args, vendor.id);
+	}
+
+	@Public()
+	@Query(() => PaginatedProducts)
+	products(@Args() args: ProductsArgs) {
+		return this.productService.findAll(args, args.vendorId);
 	}
 }
