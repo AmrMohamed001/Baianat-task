@@ -9,11 +9,12 @@ import { VendorStatus } from '../vendor/enums/vendor-status.enum';
 export class ProductLoader {
 	constructor(@InjectRepository(Product) private repo: Repository<Product>) {}
 
-	// cartItem.product
+	/* cartItem.product
 	byId = new DataLoader(async (ids: readonly number[]) => {
 		const products = await this.repo.find({ where: { id: In([...ids]) }, withDeleted: true });
 		return ids.map((id) => products.find((p) => p.id === id) ?? null);
 	});
+	*/
 
 	// vendor.products 
 	byVendorId = new DataLoader(async (vendorIds: readonly number[]) => {

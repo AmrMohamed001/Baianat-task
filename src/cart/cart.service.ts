@@ -5,6 +5,7 @@ import { DataSource, EntityManager, Repository } from 'typeorm';
 import { Cart } from './cart.entity';
 import { CartItem } from './cart-item.entity';
 import { ProductService } from '../product/product.service';
+import { VendorStatus } from '../vendor/enums/vendor-status.enum';
 
 @Injectable()
 export class CartService {
@@ -27,6 +28,15 @@ export class CartService {
 
 	myCart(userId: number) { // resolve by dataloaders
 		return this.findOrCreate(userId);
+	}
+
+	isAvailable(item: CartItem) {
+		const { product } = item;
+		return !product.deletedAt && product.vendor.status === VendorStatus.Verified && product.vendor.owner.isActive && product.stock >= item.quantity;
+	}
+
+	total(items: CartItem[]) {
+		return items.filter((i) => this.isAvailable(i)).reduce((sum, i) => sum + i.product.price * i.quantity, 0);
 	}
 
 	async add(userId: number, productId: number, quantity: number) {

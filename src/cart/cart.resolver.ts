@@ -59,4 +59,9 @@ export class CartResolver {
 	items(@Parent() cart: Cart) {
 		return this.cartItemLoader.byCartId.load(cart.id);
 	}
+
+	@ResolveField(() => Int) // cents, unavailable items excluded
+	async total(@Parent() cart: Cart) {
+		return this.cartService.total(await this.cartItemLoader.byCartId.load(cart.id));
+	}
 }

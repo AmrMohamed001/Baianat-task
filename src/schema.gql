@@ -61,11 +61,14 @@ type CartItem {
   product: Product!
   quantity: Int!
   available: Boolean!
+  unitPrice: Int!
+  lineTotal: Int!
 }
 
 type Cart {
   id: Int!
   items: [CartItem!]!
+  total: Int!
 }
 
 type Wallet {

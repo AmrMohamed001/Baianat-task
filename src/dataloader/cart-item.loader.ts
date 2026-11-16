@@ -10,7 +10,12 @@ export class CartItemLoader {
 
 	// cart.items
 	byCartId = new DataLoader(async (cartIds: readonly number[]) => {
-		const items = await this.repo.find({ where: { cartId: In([...cartIds]) }, order: { createdAt: 'ASC', id: 'ASC' } });
+		const items = await this.repo.find({
+			where: { cartId: In([...cartIds]) },
+			relations: { product: { vendor: { owner: true } } },
+			withDeleted: true,
+			order: { createdAt: 'ASC', id: 'ASC' },
+		});
 		return cartIds.map((id) => items.filter((i) => i.cartId === id));
 	});
 }
