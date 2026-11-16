@@ -15,7 +15,6 @@ import { paginate } from '../common/query/paginate';
 import { fullTextSearch } from '../common/query/search';
 import { sort } from '../common/query/sort';
 import { VendorFollow } from '../follow/follow.entity';
-
 @Injectable()
 export class ProductService {
 	constructor(

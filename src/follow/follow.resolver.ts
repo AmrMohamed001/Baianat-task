@@ -12,7 +12,6 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { PaginationArgs } from '../common/query/types/pagination.args';
 import { UserRole } from '../user/enums/user-role.enum';
 import { User } from '../user/user.entity';
-
 @Resolver(() => PublicVendor)
 export class FollowResolver {
 	constructor(
@@ -45,10 +44,5 @@ export class FollowResolver {
 	myFollowers(@Args() args: PaginationArgs, @CurrentVendor() vendor: Vendor) {
 		if (!vendor) throw new ForbiddenException(this.i18n.t('exceptions.FORBIDDEN')); // admin: no vendor
 		return this.followService.myFollowers(vendor.id, args);
-	}
-
-	@ResolveField(() => Int)
-	followersCount(@Parent() vendor: PublicVendor) {
-		return this.followService.followersCount(vendor.id);
 	}
 }

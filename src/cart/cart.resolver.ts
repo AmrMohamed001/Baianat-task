@@ -9,13 +9,14 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UserRole } from '../user/enums/user-role.enum';
 import { User } from '../user/user.entity';
-import { VendorStatus } from '../vendor/enums/vendor-status.enum';
+import { CartItemLoader } from '../dataloader/cart-item.loader';
 
 // clients only: RolesGuard lets SuperAdmin through, so each route also checks the role
-@Resolver(() => CartItem)
+@Resolver(() => Cart)
 export class CartResolver {
 	constructor(
 		private readonly cartService: CartService,
+		private readonly cartItemLoader: CartItemLoader,
 		private readonly i18n: I18nService
 	) {}
 
@@ -54,9 +55,8 @@ export class CartResolver {
 		return this.cartService.clear(user.id);
 	}
 
-	@ResolveField(() => Boolean)
-	available(@Parent() item: CartItem) {
-		const { product } = item;
-		return !product.deletedAt && product.vendor.status === VendorStatus.Verified && product.vendor.owner.isActive && product.stock >= item.quantity;
+	@ResolveField(() => [CartItem])
+	items(@Parent() cart: Cart) {
+		return this.cartItemLoader.byCartId.load(cart.id);
 	}
 }
