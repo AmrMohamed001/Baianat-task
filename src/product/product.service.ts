@@ -12,6 +12,9 @@ import { ProductsArgs } from './dtos/products.args';
 import { ProductSortField } from './enums/product-sort.enum';
 import { SortOrder } from '../common/query/enums/sort-order.enum';
 import { paginate } from '../common/query/paginate';
+import { fullTextSearch } from '../common/query/search';
+import { sort } from '../common/query/sort';
+import { VendorFollow } from '../follow/follow.entity';
 
 @Injectable()
 export class ProductService {
@@ -60,26 +63,27 @@ export class ProductService {
 		await this.productRepo.softDelete(id);
 		return true;
 	}
-	async findAll(args: ProductsArgs, vendorId?: number) {
-		// #region Query Builder
-		const allowed_vendors_sq=`SELECT vendor.id 
-				FROM sys_vendors vendor
-    			JOIN sys_users "user" ON "user".id = vendor."ownerId"
-    			WHERE vendor.status = :status AND "user"."isActive"`
-		// #endregion
-		const { categoryIds, minPrice, maxPrice, sortBy = ProductSortField.createdAt, order = SortOrder.DESC } = args;
+	async findAll(args: ProductsArgs, vendorId?: number, clientId?: number) {
+		const { search, categoryIds, minPrice, maxPrice, sortBy = ProductSortField.createdAt, order = SortOrder.DESC } = args;
 		if (minPrice != null && maxPrice != null && minPrice > maxPrice) throw new BadRequestException(this.i18n.t('exceptions.MIN_PRICE_GT_MAX'));
 
-		const qb = this.productRepo.createQueryBuilder('product')
-    			.where(`product.vendorId IN (${allowed_vendors_sq})`, { status: VendorStatus.Verified });
+		// only verified vendors whose owner is active
+		const qb = this.productRepo
+			.createQueryBuilder('product')
+			.innerJoin('product.vendor', 'vendor')
+			.innerJoin('vendor.owner', 'owner')
+			.where('vendor.status = :status', { status: VendorStatus.Verified })
+			.andWhere('owner.isActive = true');
+
 		// filtering
+		if (clientId) qb.leftJoin(VendorFollow, 'follow', 'follow.vendorId = product.vendorId AND follow.clientId = :clientId', { clientId }).orderBy('follow.id', 'DESC', 'NULLS LAST');
 		if (vendorId) qb.andWhere('product.vendorId = :vendorId', { vendorId });
 		if (categoryIds?.length) qb.andWhere('product.categoryId IN (:...categoryIds)', { categoryIds });
 		if (minPrice != null) qb.andWhere('product.price >= :minPrice', { minPrice });
 		if (maxPrice != null) qb.andWhere('product.price <= :maxPrice', { maxPrice });
-		// sorting
-		qb.orderBy(`product.${sortBy}`, order).addOrderBy('product.id', order);
-		// paging
+
+		if (search) fullTextSearch(qb, search);
+		sort(qb, sortBy, order);
 		return paginate(qb, args);
 	}
 }

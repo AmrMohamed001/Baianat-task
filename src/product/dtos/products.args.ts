@@ -1,11 +1,19 @@
 import { ArgsType, Field, Int } from '@nestjs/graphql';
-import { IsEnum, IsInt, IsOptional, Min } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsEnum, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import { PaginationArgs } from '../../common/query/types/pagination.args';
 import { ProductSortField } from '../enums/product-sort.enum';
 import { SortOrder } from '../../common/query/enums/sort-order.enum';
 
 @ArgsType()
 export class ProductsArgs extends PaginationArgs {
+	@Transform(({ value }) => value?.trim())
+	@IsOptional()
+	@IsString()
+	@MaxLength(100)
+	@Field({ nullable: true })
+	search?: string;
+
 	@IsOptional()
 	@IsInt()
 	@Field(() => Int, { nullable: true })

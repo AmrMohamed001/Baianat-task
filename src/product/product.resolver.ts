@@ -11,7 +11,10 @@ import { Vendor } from '../vendor/vendor.entity';
 import { VerifiedVendor } from '../vendor/decorators/verified-vendor.decorator';
 import { CurrentVendor } from '../vendor/decorators/current-vendor.decorator';
 import { PaginationArgs } from '../common/query/types/pagination.args';
-import { Public } from '../auth/decorators/public.decorator';
+import { OptionalAuth } from '../auth/decorators/optional-auth.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { User } from '../user/user.entity';
+import { UserRole } from '../user/enums/user-role.enum';
 
 @Resolver(() => Product)
 export class ProductResolver {
@@ -49,10 +52,10 @@ export class ProductResolver {
 		return this.productService.findAll(args, vendor.id);
 	}
 
-	@Public()
+	@OptionalAuth()
 	@Query(() => PaginatedProducts)
-	products(@Args() args: ProductsArgs) {
-		return this.productService.findAll(args, args.vendorId);
+	products(@Args() args: ProductsArgs, @CurrentUser() user?: User) {
+		return this.productService.findAll(args, args.vendorId, user?.role === UserRole.Client ? user.id : undefined);
 	}
 
 	@ResolveField(() => Boolean)
