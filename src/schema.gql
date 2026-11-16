@@ -26,6 +26,41 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type Category {
+  id: Int!
+  nameAr: String!
+  nameEn: String!
+  createdAt: DateTime!
+}
+
+type Product {
+  id: Int!
+  vendorId: Int!
+  categoryId: Int
+  nameAr: String!
+  nameEn: String!
+  descriptionAr: String
+  descriptionEn: String
+  price: Int!
+  stock: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  inStock: Boolean!
+}
+
+type CartItem {
+  id: Int!
+  productId: Int!
+  product: Product!
+  quantity: Int!
+  available: Boolean!
+}
+
+type Cart {
+  id: Int!
+  items: [CartItem!]!
+}
+
 type Wallet {
   id: Int!
   balance: Float!
@@ -52,6 +87,14 @@ enum UserRole {
 
 type PaginatedUsers {
   data: [User!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+}
+
+type PaginatedProducts {
+  data: [Product!]!
   total: Int!
   page: Int!
   limit: Int!
@@ -100,39 +143,9 @@ type PaginatedPublicVendors {
   totalPages: Int!
 }
 
-type Product {
-  id: Int!
-  vendorId: Int!
-  categoryId: Int
-  nameAr: String!
-  nameEn: String!
-  descriptionAr: String
-  descriptionEn: String
-  price: Int!
-  stock: Int!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  inStock: Boolean!
-}
-
-type Category {
-  id: Int!
-  nameAr: String!
-  nameEn: String!
-  createdAt: DateTime!
-}
-
 type PublicCategory {
   id: Int!
   name: String!
-}
-
-type PaginatedProducts {
-  data: [Product!]!
-  total: Int!
-  page: Int!
-  limit: Int!
-  totalPages: Int!
 }
 
 type Query {
@@ -140,12 +153,7 @@ type Query {
   me: User!
   user(id: Int!): User!
   users(page: Int! = 1, limit: Int! = 20, role: UserRole, isActive: Boolean): PaginatedUsers!
-  vendors(page: Int! = 1, limit: Int! = 20, status: VendorStatus): PaginatedVendors!
-  myStore: Vendor!
-  myWallet: Wallet!
-  myFollowings(page: Int! = 1, limit: Int! = 20): PaginatedPublicVendors!
-  myFollowers(page: Int! = 1, limit: Int! = 20): PaginatedFollowers!
-  categories: [PublicCategory!]!
+  myCart: Cart!
   myProducts(page: Int! = 1, limit: Int! = 20): PaginatedProducts!
   products(
     page: Int! = 1
@@ -162,6 +170,12 @@ type Query {
     sortBy: ProductSortField! = createdAt
     order: SortOrder! = DESC
   ): PaginatedProducts!
+  vendors(page: Int! = 1, limit: Int! = 20, status: VendorStatus): PaginatedVendors!
+  myStore: Vendor!
+  myWallet: Wallet!
+  myFollowings(page: Int! = 1, limit: Int! = 20): PaginatedPublicVendors!
+  myFollowers(page: Int! = 1, limit: Int! = 20): PaginatedFollowers!
+  categories: [PublicCategory!]!
 }
 
 enum ProductSortField {
@@ -181,6 +195,18 @@ type Mutation {
   updateUser(id: Int!, input: UpdateVendorDto!): Boolean!
   updateRole(id: Int!, role: UserRole!): Boolean!
   deleteUser(id: Int!): Boolean!
+  addToCart(productId: Int!, quantity: Int!): Cart!
+  updateCartItem(
+    productId: Int!
+
+    """0 removes the item from the cart"""
+    quantity: Int!
+  ): Cart!
+  removeFromCart(productId: Int!): Cart!
+  clearCart: Cart!
+  createProduct(input: CreateProductInput!): Product!
+  updateProduct(id: Int!, input: UpdateProductInput!): Product!
+  deleteProduct(id: Int!): Boolean!
   setVendorCommission(vendorId: Int!, commissionRate: Float!): Vendor!
   approveVendor(vendorId: Int!): Vendor!
   rejectVendor(vendorId: Int!, input: RejectVendorInput): Vendor!
@@ -189,9 +215,6 @@ type Mutation {
   createCategory(input: CreateCategoryInput!): Category!
   updateCategory(id: Int!, input: UpdateCategoryInput!): Category!
   deleteCategory(id: Int!): Boolean!
-  createProduct(input: CreateProductInput!): Product!
-  updateProduct(id: Int!, input: UpdateProductInput!): Product!
-  deleteProduct(id: Int!): Boolean!
   registerClient(input: RegisterClientInput!): String!
   registerVendor(input: RegisterVendorInput!): String!
   login(input: LoginInput!): AuthPayload!
@@ -211,20 +234,6 @@ input UpdateVendorDto {
   phone: String
   storeName: String
   description: String
-}
-
-input RejectVendorInput {
-  reason: String
-}
-
-input CreateCategoryInput {
-  nameAr: String!
-  nameEn: String!
-}
-
-input UpdateCategoryInput {
-  nameAr: String
-  nameEn: String
 }
 
 input CreateProductInput {
@@ -252,6 +261,20 @@ input UpdateProductInput {
   price: Int
   stock: Int
   categoryId: Int
+}
+
+input RejectVendorInput {
+  reason: String
+}
+
+input CreateCategoryInput {
+  nameAr: String!
+  nameEn: String!
+}
+
+input UpdateCategoryInput {
+  nameAr: String
+  nameEn: String
 }
 
 input RegisterClientInput {
