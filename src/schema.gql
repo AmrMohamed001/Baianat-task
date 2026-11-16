@@ -13,6 +13,7 @@ type Vendor {
   reviewedAt: DateTime
   rejectionReason: String
   createdAt: DateTime!
+  products: [Product!]!
 }
 
 enum VendorStatus {
@@ -31,6 +32,8 @@ type Category {
   nameAr: String!
   nameEn: String!
   createdAt: DateTime!
+  name: String!
+  products: [Product!]!
 }
 
 type Product {
@@ -46,6 +49,10 @@ type Product {
   createdAt: DateTime!
   updatedAt: DateTime!
   inStock: Boolean!
+  name: String!
+  description: String
+  vendor: PublicVendor!
+  category: Category
 }
 
 type CartItem {
@@ -101,6 +108,21 @@ type PaginatedProducts {
   totalPages: Int!
 }
 
+type PublicVendor {
+  id: Int!
+  storeName: String!
+  description: String
+  products: [Product!]!
+}
+
+type PaginatedPublicVendors {
+  data: [PublicVendor!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+}
+
 type PaginatedVendors {
   data: [Vendor!]!
   total: Int!
@@ -126,26 +148,6 @@ type PaginatedFollowers {
   page: Int!
   limit: Int!
   totalPages: Int!
-}
-
-type PublicVendor {
-  id: Int!
-  storeName: String!
-  description: String
-  followersCount: Int!
-}
-
-type PaginatedPublicVendors {
-  data: [PublicVendor!]!
-  total: Int!
-  page: Int!
-  limit: Int!
-  totalPages: Int!
-}
-
-type PublicCategory {
-  id: Int!
-  name: String!
 }
 
 type Query {
@@ -175,7 +177,7 @@ type Query {
   myWallet: Wallet!
   myFollowings(page: Int! = 1, limit: Int! = 20): PaginatedPublicVendors!
   myFollowers(page: Int! = 1, limit: Int! = 20): PaginatedFollowers!
-  categories: [PublicCategory!]!
+  categories: [Category!]!
 }
 
 enum ProductSortField {

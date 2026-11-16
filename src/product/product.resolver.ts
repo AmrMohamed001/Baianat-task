@@ -1,12 +1,11 @@
 import { ForbiddenException } from '@nestjs/common';
 import { Args, Int, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
-import { I18nService } from 'nestjs-i18n';
+import { I18nContext, I18nService } from 'nestjs-i18n';
 import { ProductService } from './product.service';
 import { Product } from './product.entity';
 import { CreateProductInput } from './dtos/create-product.dto';
 import { UpdateProductInput } from './dtos/update-product.dto';
-import { PaginatedProducts } from './dtos/paginated-products.type';
-import { ProductsArgs } from './dtos/products.args';
+import { PaginatedProducts } from './dtos/paginated-products.type';import { ProductsArgs } from './dtos/products.args';
 import { Vendor } from '../vendor/vendor.entity';
 import { VerifiedVendor } from '../vendor/decorators/verified-vendor.decorator';
 import { CurrentVendor } from '../vendor/decorators/current-vendor.decorator';
@@ -15,11 +14,17 @@ import { OptionalAuth } from '../auth/decorators/optional-auth.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { User } from '../user/user.entity';
 import { UserRole } from '../user/enums/user-role.enum';
+import { PublicVendor } from '../vendor/dtos/public-vendor.type';
+import { Category } from '../category/category.entity';
+import { VendorLoader } from '../dataloader/vendor.loader';
+import { CategoryLoader } from '../dataloader/category.loader';
 
 @Resolver(() => Product)
 export class ProductResolver {
 	constructor(
 		private readonly productService: ProductService,
+		private readonly vendorLoader: VendorLoader,
+		private readonly categoryLoader: CategoryLoader,
 		private readonly i18n: I18nService
 	) {}
 
@@ -61,5 +66,26 @@ export class ProductResolver {
 	@ResolveField(() => Boolean)
 	inStock(@Parent() product: Product) {
 		return product.stock > 0;
+	}
+
+	@ResolveField(() => String)
+	name(@Parent() product: Product) {
+		return I18nContext.current()?.lang === 'en' ? product.nameEn : product.nameAr;
+	}
+
+	@ResolveField(() => String, { nullable: true })
+	description(@Parent() product: Product) {
+		return I18nContext.current()?.lang === 'en' ? product.descriptionEn : product.descriptionAr;
+	}
+
+	@ResolveField(() => PublicVendor)
+	vendor(@Parent() product: Product) {
+		return this.vendorLoader.byId.load(product.vendorId);
+	}
+
+	@ResolveField(() => Category, { nullable: true })
+	category(@Parent() product: Product) {
+		if (product.categoryId === null) return null; // only soft-deleted products whose category was deleted
+		return this.categoryLoader.byId.load(product.categoryId);
 	}
 }

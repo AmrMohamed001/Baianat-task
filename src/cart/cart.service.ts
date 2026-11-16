@@ -25,14 +25,8 @@ export class CartService {
 		return (await this.cartRepo.findOne({ where: { userId } })) ?? this.cartRepo.save(this.cartRepo.create({ userId }));
 	}
 
-	async myCart(userId: number) {
-		const { id } = await this.findOrCreate(userId);
-		return this.cartRepo.findOne({
-			where: { id },
-			relations: { items: { product: { vendor: { owner: true } } } },
-			withDeleted: true, //soft deleted products stay in the cart, marked available = false
-			order: { items: { createdAt: 'ASC', id: 'ASC' } },
-		});
+	myCart(userId: number) { // resolve by dataloaders
+		return this.findOrCreate(userId);
 	}
 
 	async add(userId: number, productId: number, quantity: number) {

@@ -1,4 +1,4 @@
-import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Int, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { VendorsArgs } from './dtos/vendors.args';
 import { PaginatedVendors } from './dtos/paginated-vendors.type';
 import { SetVendorCommissionArgs } from './dtos/set-vendor-commission.args';
@@ -9,10 +9,12 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UserRole } from '../user/enums/user-role.enum';
 import { User } from '../user/user.entity';
 import { Vendor } from './vendor.entity';
+import { Product } from '../product/product.entity';
+import { ProductLoader } from '../dataloader/product.loader';
 
-@Resolver()
+@Resolver(() => Vendor) 
 export class VendorResolver {
-	constructor(private readonly vendorService: VendorService) {}
+	constructor(private readonly vendorService: VendorService, private readonly productLoader: ProductLoader) {}
 
 	@Roles(UserRole.SuperAdmin)
 	@Query(() => PaginatedVendors)
@@ -50,5 +52,11 @@ export class VendorResolver {
 		@CurrentUser() admin: User
 	) {
 		return this.vendorService.reject(vendorId, admin.id, input?.reason);
+	}
+
+
+	@ResolveField(() => [Product])
+	products(@Parent() vendor: Vendor) {
+		return this.productLoader.byVendorId.load(vendor.id);
 	}
 }

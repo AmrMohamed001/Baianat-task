@@ -4,9 +4,10 @@ import { Category } from './category.entity';
 import { Product } from '../product/product.entity';
 import { CategoryService } from './category.service';
 import { CategoryResolver } from './category.resolver';
+import { DataloaderModule } from '../dataloader/dataloader.module';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([Category, Product])],
+	imports: [TypeOrmModule.forFeature([Category, Product]), DataloaderModule],
 	providers: [CategoryService, CategoryResolver],
 })
 export class CategoryModule {}

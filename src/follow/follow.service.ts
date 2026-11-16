@@ -32,11 +32,6 @@ export class FollowService {
 		return vendor;
 	}
 
-	followersCount(vendorId: number) {
-		// i know that solution will be slow with large dataset but large here means in millions)and the workaround is by using stored count key with db trigger, but for now this is enough
-		return this.followRepo.count({ where: { vendorId } });
-	}
-
 	async myFollowings(clientId: number, args: PaginationArgs) {
 		const qb = this.followRepo
 			.createQueryBuilder('f')

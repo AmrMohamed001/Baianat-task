@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { I18nContext, I18nService } from 'nestjs-i18n';
+import { I18nService } from 'nestjs-i18n';
 import { Repository } from 'typeorm';
 import { Category } from './category.entity';
 import { Product } from '../product/product.entity';
@@ -15,10 +15,8 @@ export class CategoryService {
 		private readonly i18n: I18nService
 	) {}
 
-	async findAll() {
-		const categories = await this.categoryRepo.find({ order: { id: 'ASC' } });
-		const isEn = I18nContext.current()?.lang === 'en';
-		return categories.map((c) => ({ id: c.id, name: isEn ? c.nameEn : c.nameAr }));
+	findAll() {
+		return this.categoryRepo.find({ order: { id: 'ASC' } }); // name in the request language: CategoryResolver.name
 	}
 
 	create(input: CreateCategoryInput) {
