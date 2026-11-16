@@ -86,4 +86,15 @@ export class ProductService {
 		sort(qb, sortBy, order);
 		return paginate(qb, args);
 	}
+
+	findAvailable(id: number) {
+		return this.productRepo
+			.createQueryBuilder('product')
+			.innerJoin('product.vendor', 'vendor')
+			.innerJoin('vendor.owner', 'owner')
+			.where('product.id = :id', { id })
+			.andWhere('vendor.status = :status', { status: VendorStatus.Verified })
+			.andWhere('owner.isActive = true')
+			.getOne();
+	}
 }

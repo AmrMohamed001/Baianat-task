@@ -9,5 +9,6 @@ import { ProductResolver } from './product.resolver';
 @Module({
 	imports: [TypeOrmModule.forFeature([Product, Category, Vendor])],
 	providers: [ProductService, ProductResolver],
+	exports: [ProductService],
 })
 export class ProductModule {}
