@@ -150,6 +150,7 @@ type Query {
   products(
     page: Int! = 1
     limit: Int! = 20
+    search: String
     vendorId: Int
     categoryIds: [Int!]
 

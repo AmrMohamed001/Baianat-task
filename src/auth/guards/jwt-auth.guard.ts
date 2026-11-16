@@ -30,7 +30,9 @@ export class JwtAuthGuard implements CanActivate {
 		const isPublic = this.reflector.getAllAndOverride('isPublic', [context.getHandler(),context.getClass()]);
 		if (isPublic) return true;
 
+		const optional = this.reflector.getAllAndOverride('optionalAuth', [context.getHandler(), context.getClass()]);
 		const { req } = GqlExecutionContext.create(context).getContext();
+		if (optional && !req.headers?.authorization) return true; // anonymous
 		const [bearer, token] = req?.headers?.authorization?.split(' ') ?? [];
 
 		if (bearer !== 'Bearer' || !token) throw new UnauthorizedException(
