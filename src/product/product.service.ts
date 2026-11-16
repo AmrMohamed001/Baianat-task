@@ -37,6 +37,16 @@ export class ProductService {
 		return this.productRepo.save(this.productRepo.merge(product, input));
 	}
 
+	async delete(id: number, vendorId?: number) {
+		const product = await this.productRepo.findOne({ where: { id } });
+		if (!product) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_PRODUCT'));
+		if (vendorId !== undefined && product.vendorId !== vendorId)
+			throw new ForbiddenException(this.i18n.t('exceptions.NOT_OWNER'));
+
+		await this.productRepo.softDelete(id);
+		return true;
+	}
+
 	myProducts(vendorId: number, args: PaginationArgs) {
 		const qb = this.productRepo
 			.createQueryBuilder('p')

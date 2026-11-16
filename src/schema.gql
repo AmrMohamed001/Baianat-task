@@ -165,6 +165,7 @@ type Mutation {
   deleteCategory(id: Int!): Boolean!
   createProduct(input: CreateProductInput!): Product!
   updateProduct(id: Int!, input: UpdateProductInput!): Product!
+  deleteProduct(id: Int!): Boolean!
   registerClient(input: RegisterClientInput!): String!
   registerVendor(input: RegisterVendorInput!): String!
   login(input: LoginInput!): AuthPayload!

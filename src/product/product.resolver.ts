@@ -37,6 +37,12 @@ export class ProductResolver {
 	}
 
 	@VerifiedVendor()
+	@Mutation(() => Boolean)
+	deleteProduct(@Args('id', { type: () => Int }) id: number, @CurrentVendor() vendor?: Vendor) {
+		return this.productService.delete(id, vendor?.id);
+	}
+
+	@VerifiedVendor()
 	@Query(() => PaginatedProducts)
 	myProducts(@Args() args: PaginationArgs, @CurrentVendor() vendor: Vendor) {
 		if (!vendor) throw new ForbiddenException(this.i18n.t('exceptions.FORBIDDEN'));
