@@ -26,5 +26,8 @@
   "NOT_FOUND_WALLET": "Wallet not found",
   "CANNOT_DEACTIVATE_SELF": "You cannot deactivate your own account",
   "NOT_A_VENDOR": "This user is not a vendor",
-  "NOT_FOUND_CATEGORY": "Category not found"
+  "NOT_FOUND_CATEGORY": "Category not found",
+  "NOT_FOUND_PRODUCT": "Product not found",
+  "CATEGORY_HAS_PRODUCTS": "This category still has products, move them to another category first",
+  "EMPTY_UPDATE": "Send at least one field to update"
 }

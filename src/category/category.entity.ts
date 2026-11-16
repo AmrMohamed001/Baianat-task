@@ -1,5 +1,6 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { Product } from '../product/product.entity';
 
 @Index(['nameAr'], { unique: true })
 @Index(['nameEn'], { unique: true })
@@ -24,4 +25,7 @@ export class Category {
 
 	@UpdateDateColumn({ type: 'timestamptz' })
 	updatedAt: Date;
+
+	@OneToMany(() => Product, (product) => product.category)
+	products: Product[];
 }

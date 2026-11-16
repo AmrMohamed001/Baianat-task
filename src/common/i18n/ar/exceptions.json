@@ -26,5 +26,8 @@
   "NOT_FOUND_WALLET": "المحفظة غير موجودة",
   "CANNOT_DEACTIVATE_SELF": "لا يمكنك تعطيل حسابك",
   "NOT_A_VENDOR": "هذا المستخدم ليس تاجرًا",
-  "NOT_FOUND_CATEGORY": "التصنيف غير موجود"
+  "NOT_FOUND_CATEGORY": "التصنيف غير موجود",
+  "NOT_FOUND_PRODUCT": "المنتج غير موجود",
+  "CATEGORY_HAS_PRODUCTS": "هذا التصنيف يحتوي على منتجات، انقلها إلى تصنيف آخر أولاً",
+  "EMPTY_UPDATE": "أرسل حقلاً واحداً على الأقل للتعديل"
 }

@@ -100,6 +100,20 @@ type PaginatedPublicVendors {
   totalPages: Int!
 }
 
+type Product {
+  id: Int!
+  vendorId: Int!
+  categoryId: Int
+  nameAr: String!
+  nameEn: String!
+  descriptionAr: String
+  descriptionEn: String
+  price: Int!
+  stock: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
 type Category {
   id: Int!
   nameAr: String!
@@ -110,6 +124,14 @@ type Category {
 type PublicCategory {
   id: Int!
   name: String!
+}
+
+type PaginatedProducts {
+  data: [Product!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
 }
 
 type Query {
@@ -123,6 +145,7 @@ type Query {
   myFollowings(page: Int! = 1, limit: Int! = 20): PaginatedPublicVendors!
   myFollowers(page: Int! = 1, limit: Int! = 20): PaginatedFollowers!
   categories: [PublicCategory!]!
+  myProducts(page: Int! = 1, limit: Int! = 20): PaginatedProducts!
 }
 
 type Mutation {
@@ -140,6 +163,8 @@ type Mutation {
   createCategory(input: CreateCategoryInput!): Category!
   updateCategory(id: Int!, input: UpdateCategoryInput!): Category!
   deleteCategory(id: Int!): Boolean!
+  createProduct(input: CreateProductInput!): Product!
+  updateProduct(id: Int!, input: UpdateProductInput!): Product!
   registerClient(input: RegisterClientInput!): String!
   registerVendor(input: RegisterVendorInput!): String!
   login(input: LoginInput!): AuthPayload!
@@ -173,6 +198,30 @@ input CreateCategoryInput {
 input UpdateCategoryInput {
   nameAr: String
   nameEn: String
+}
+
+input CreateProductInput {
+  nameAr: String!
+  nameEn: String!
+  descriptionAr: String
+  descriptionEn: String
+
+  """cents"""
+  price: Int!
+  stock: Int!
+  categoryId: Int!
+}
+
+input UpdateProductInput {
+  nameAr: String
+  nameEn: String
+  descriptionAr: String
+  descriptionEn: String
+
+  """cents"""
+  price: Int
+  stock: Int
+  categoryId: Int
 }
 
 input RegisterClientInput {
