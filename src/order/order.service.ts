@@ -9,10 +9,12 @@ import { CartItem } from '../cart/cart-item.entity';
 import { CartService } from '../cart/cart.service';
 import { Product } from '../product/product.entity';
 import { PaymentService } from '../payment/payment.service';
-import { Checkout } from './checkout.entity';
-import { Order } from './order.entity';
-import { OrderItem } from './order-item.entity';
-import { OrderStatusHistory } from './order-status-history.entity';
+import { Checkout } from './entities/checkout.entity';
+import { Order } from './entities/order.entity';
+import { OrderItem } from './entities/order-item.entity';
+import { OrderStatusHistory } from './entities/order-status-history.entity';
+import { MyOrdersArgs } from './dtos/my-orders.args';
+import { paginate } from '../common/query/paginate';
 import { PaymentStatus } from './enums/payment-status.enum';
 import { OrderStatus } from './enums/order-status.enum';
 
@@ -35,7 +37,7 @@ export class OrderService {
 
 			const pending = await manager.findOne(Checkout, {
 				where: { clientId: userId, status: PaymentStatus.Pending },
-				relations: { orders: { items: true } },
+				relations: { orders: { checkout: true } }, // items and history load by dataloaders
 			});
 			if (pending) return pending;
 
@@ -103,8 +105,25 @@ export class OrderService {
 			const intent = await this.paymentService.createIntent(checkout.total, checkout.id); // throws → everything rolls back
 			await manager.update(Checkout, checkout.id, { paymentIntentId: intent.id });
 
-			return manager.findOneOrFail(Checkout, { where: { id: checkout.id }, relations: { orders: { items: true } } });
+			return manager.findOneOrFail(Checkout, { where: { id: checkout.id }, relations: { orders: { checkout: true } } });
 		});
+	}
+
+	myOrders(args: MyOrdersArgs, clientId: number) {
+		const qb = this.orderRepo
+			.createQueryBuilder('order')
+			.innerJoinAndSelect('order.checkout', 'checkout')
+			.where('checkout.clientId = :clientId', { clientId })
+			.orderBy('order.createdAt', 'DESC')
+			.addOrderBy('order.id', 'DESC');
+		if (args.status) qb.andWhere('order.status = :status', { status: args.status });
+		return paginate(qb, args);
+	}
+
+	async findOne(id: number, clientId: number) {
+		const order = await this.orderRepo.findOne({ where: { id, checkout: { clientId } }, relations: { checkout: true } });
+		if (!order) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_ORDER'));
+		return order;
 	}
 
 	async updateStatus(orderId: number, status: OrderStatus, actorId: number, vendorId?: number) {
@@ -127,13 +146,13 @@ export class OrderService {
 				for (const { productId, quantity } of order.items)
 					if (productId) await manager.increment(Product, { id: productId }, 'stock', quantity);
 
-				if (order.checkout.status === PaymentStatus.Paid) await this.paymentService.refund(order.checkoutId, order.total); // throws → rolls back
+				if (order.checkout.status === PaymentStatus.Paid) await this.paymentService.refund(order.checkoutId, order.total);
 			}
 		});
 
 		this.mailQueue
 			.add('order-status-changed', { orderId, clientId: order.checkout.clientId, vendorId: order.vendorId, from: order.status, to: status, actorId })
 			.catch((e) => this.logger.error(e.message, e.stack));
-		return this.orderRepo.findOneOrFail({ where: { id: orderId }, relations: { items: true } });
+		return this.orderRepo.findOneOrFail({ where: { id: orderId }, relations: { checkout: true } });
 	}
 }

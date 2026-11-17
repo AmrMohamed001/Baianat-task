@@ -2,8 +2,8 @@ import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMa
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { Checkout } from './checkout.entity';
 import { OrderItem } from './order-item.entity';
-import { Vendor } from '../vendor/vendor.entity';
-import { OrderStatus } from './enums/order-status.enum';
+import { Vendor } from '../../vendor/vendor.entity';
+import { OrderStatus } from '../enums/order-status.enum';
 
 @Index(['checkoutId'])
 @Index(['vendorId'])

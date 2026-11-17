@@ -2,7 +2,7 @@ import { Injectable, Scope } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import DataLoader from 'dataloader';
 import { In, Repository } from 'typeorm';
-import { OrderStatusHistory } from '../order/order-status-history.entity';
+import { OrderStatusHistory } from '../order/entities/order-status-history.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class OrderHistoryLoader {

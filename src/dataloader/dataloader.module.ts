@@ -9,12 +9,14 @@ import { ProductLoader } from './product.loader';
 import { VendorLoader } from './vendor.loader';
 import { CategoryLoader } from './category.loader';
 import { CartItemLoader } from './cart-item.loader';
-import { OrderStatusHistory } from '../order/order-status-history.entity';
+import { OrderStatusHistory } from '../order/entities/order-status-history.entity';
 import { OrderHistoryLoader } from './order-history.loader';
+import { OrderItem } from '../order/entities/order-item.entity';
+import { OrderItemLoader } from './order-item.loader';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([Product, Vendor, Category, CartItem, VendorFollow, OrderStatusHistory])],
-	providers: [ProductLoader, VendorLoader, CategoryLoader, CartItemLoader, OrderHistoryLoader],
-	exports: [ProductLoader, VendorLoader, CategoryLoader, CartItemLoader, OrderHistoryLoader],
+	imports: [TypeOrmModule.forFeature([Product, Vendor, Category, CartItem, VendorFollow, OrderStatusHistory, OrderItem])],
+	providers: [ProductLoader, VendorLoader, CategoryLoader, CartItemLoader, OrderHistoryLoader, OrderItemLoader],
+	exports: [ProductLoader, VendorLoader, CategoryLoader, CartItemLoader, OrderHistoryLoader, OrderItemLoader],
 })
 export class DataloaderModule {}

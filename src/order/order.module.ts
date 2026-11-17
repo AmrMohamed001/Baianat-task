@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bullmq';
-import { Checkout } from './checkout.entity';
-import { Order } from './order.entity';
-import { OrderItem } from './order-item.entity';
+import { Checkout } from './entities/checkout.entity';
+import { Order } from './entities/order.entity';
+import { OrderItem } from './entities/order-item.entity';
 import { OrderService } from './order.service';
-import { OrderStatusHistory } from './order-status-history.entity';
+import { OrderStatusHistory } from './entities/order-status-history.entity';
 import { OrderResolver } from './order.resolver';
-import { OrderFieldsResolver } from './order-fields.resolver';
 import { CartModule } from '../cart/cart.module';
 import { PaymentModule } from '../payment/payment.module';
 import { DataloaderModule } from '../dataloader/dataloader.module';
@@ -20,6 +19,6 @@ import { DataloaderModule } from '../dataloader/dataloader.module';
 		PaymentModule,
 		DataloaderModule,
 	],
-	providers: [OrderService, OrderResolver, OrderFieldsResolver],
+	providers: [OrderService, OrderResolver],
 })
 export class OrderModule {}

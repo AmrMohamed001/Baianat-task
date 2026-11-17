@@ -1,8 +1,8 @@
 import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
-import { User } from '../user/user.entity';
+import { User } from '../../user/user.entity';
 import { Order } from './order.entity';
-import { PaymentStatus } from './enums/payment-status.enum';
+import { PaymentStatus } from '../enums/payment-status.enum';
 
 @Index(['clientId'], { unique: true, where: `"status" = 'Pending'` }) // safe net
 @Entity('sys_checkouts')

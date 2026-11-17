@@ -159,6 +159,7 @@ type Order {
   status: OrderStatus!
   items: [OrderItem!]!
   createdAt: DateTime!
+  paymentStatus: PaymentStatus!
   history: [OrderStatusHistory!]!
 }
 
@@ -175,6 +176,14 @@ type OrderStatusHistory {
   status: OrderStatus!
   changedBy: Int
   createdAt: DateTime!
+}
+
+type PaginatedOrders {
+  data: [Order!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
 }
 
 type PaginatedVendors {
@@ -226,6 +235,8 @@ type Query {
     sortBy: ProductSortField! = createdAt
     order: SortOrder! = DESC
   ): PaginatedProducts!
+  myOrders(page: Int! = 1, limit: Int! = 20, status: OrderStatus): PaginatedOrders!
+  order(id: Int!): Order!
   vendors(page: Int! = 1, limit: Int! = 20, status: VendorStatus): PaginatedVendors!
   myStore: Vendor!
   myWallet: Wallet!

@@ -1,8 +1,8 @@
 import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { Order } from './order.entity';
-import { User } from '../user/user.entity';
-import { OrderStatus } from './enums/order-status.enum';
+import { User } from '../../user/user.entity';
+import { OrderStatus } from '../enums/order-status.enum';
 
 @Index(['orderId'])
 @Entity('sys_order_status_history')
