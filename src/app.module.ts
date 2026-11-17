@@ -15,6 +15,8 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { DatabaseModule } from './database/database.module';
 import { UserModule } from './user/user.module';
 import { CartModule } from './cart/cart.module';
+import { OrderModule } from './order/order.module';
+import { PaymentModule } from './payment/payment.module';
 import { AuthModule } from './auth/auth.module';
 import { VendorModule } from './vendor/vendor.module';
 import { WalletModule } from './wallet/wallet.module';
@@ -80,6 +82,8 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     UserModule,
 
     CartModule,
+    OrderModule,
+    PaymentModule,
     VendorModule,
     WalletModule,
     FollowModule,

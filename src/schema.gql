@@ -126,6 +126,49 @@ type PaginatedPublicVendors {
   totalPages: Int!
 }
 
+type OrderItem {
+  id: Int!
+  productId: Int
+  nameAr: String!
+  nameEn: String!
+  priceAtPurchase: Int!
+  quantity: Int!
+}
+
+type Order {
+  id: Int!
+  vendorId: Int!
+  total: Int!
+  commissionAmount: Int!
+  status: OrderStatus!
+  items: [OrderItem!]!
+  createdAt: DateTime!
+}
+
+enum OrderStatus {
+  Pending
+  Paid
+  Shipped
+  Delivered
+  Cancelled
+}
+
+type Checkout {
+  id: Int!
+  total: Int!
+  status: PaymentStatus!
+  paymentIntentId: String
+  orders: [Order!]!
+  createdAt: DateTime!
+}
+
+enum PaymentStatus {
+  Pending
+  Paid
+  Failed
+  Expired
+}
+
 type PaginatedVendors {
   data: [Vendor!]!
   total: Int!
@@ -212,6 +255,7 @@ type Mutation {
   createProduct(input: CreateProductInput!): Product!
   updateProduct(id: Int!, input: UpdateProductInput!): Product!
   deleteProduct(id: Int!): Boolean!
+  checkout: Checkout!
   setVendorCommission(vendorId: Int!, commissionRate: Float!): Vendor!
   approveVendor(vendorId: Int!): Vendor!
   rejectVendor(vendorId: Int!, input: RejectVendorInput): Vendor!

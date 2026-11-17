@@ -34,5 +34,7 @@
   "MAX_CART_QUANTITY": "You can add at most {max} of one product",
   "NOT_IN_CART": "This product is not in your cart",
   "CATEGORY_HAS_PRODUCTS": "This category still has products, move them to another category first",
-  "EMPTY_UPDATE": "Send at least one field to update"
+  "EMPTY_UPDATE": "Send at least one field to update",
+  "CART_EMPTY": "Your cart is empty",
+  "ITEM_UNAVAILABLE": "{name} is no longer available"
 }
