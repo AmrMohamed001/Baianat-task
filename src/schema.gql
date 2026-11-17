@@ -147,7 +147,7 @@ type Order {
 
 enum OrderStatus {
   Pending
-  Paid
+  Processing
   Shipped
   Delivered
   Cancelled
@@ -256,6 +256,7 @@ type Mutation {
   updateProduct(id: Int!, input: UpdateProductInput!): Product!
   deleteProduct(id: Int!): Boolean!
   checkout: Checkout!
+  updateOrderStatus(orderId: Int!, status: OrderStatus!): Order!
   setVendorCommission(vendorId: Int!, commissionRate: Float!): Vendor!
   approveVendor(vendorId: Int!): Vendor!
   rejectVendor(vendorId: Int!, input: RejectVendorInput): Vendor!

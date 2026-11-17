@@ -36,5 +36,10 @@
   "CATEGORY_HAS_PRODUCTS": "This category still has products, move them to another category first",
   "EMPTY_UPDATE": "Send at least one field to update",
   "CART_EMPTY": "Your cart is empty",
+  "NOT_FOUND_ORDER": "Order not found",
+  "ORDER_FINAL": "This order is already {status} and can't be changed",
+  "INVALID_ORDER_TRANSITION": "An order can't move from {from} to {to}",
+  "ORDER_NOT_PAID": "The order can't be processed before the payment succeeds",
+  "ORDER_ALREADY_CHANGED": "This order was just changed by someone else, please refresh",
   "ITEM_UNAVAILABLE": "{name} is no longer available"
 }
