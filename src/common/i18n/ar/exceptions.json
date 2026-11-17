@@ -36,5 +36,10 @@
   "CATEGORY_HAS_PRODUCTS": "هذا التصنيف يحتوي على منتجات، انقلها إلى تصنيف آخر أولاً",
   "EMPTY_UPDATE": "أرسل حقلاً واحداً على الأقل للتعديل",
   "CART_EMPTY": "سلتك فارغة",
+  "NOT_FOUND_ORDER": "الطلب غير موجود",
+  "ORDER_FINAL": "هذا الطلب {status} بالفعل ولا يمكن تغييره",
+  "INVALID_ORDER_TRANSITION": "لا يمكن نقل الطلب من {from} إلى {to}",
+  "ORDER_NOT_PAID": "لا يمكن تجهيز الطلب قبل نجاح الدفع",
+  "ORDER_ALREADY_CHANGED": "تم تغيير هذا الطلب للتو من شخص آخر، يرجى التحديث",
   "ITEM_UNAVAILABLE": "{name} لم يعد متاحاً"
 }

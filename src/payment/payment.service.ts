@@ -6,4 +6,8 @@ export class PaymentService {
 	async createIntent(amount: number, checkoutId: number) {
 		return { id: `pi_test_${checkoutId}` };
 	}
+
+	async refund(checkoutId: number, amount: number) {
+		return { id: `re_test_${checkoutId}` };
+	}
 }

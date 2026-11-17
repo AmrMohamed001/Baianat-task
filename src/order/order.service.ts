@@ -1,6 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { I18nContext, I18nService } from 'nestjs-i18n';
-import { DataSource, In } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { Cart } from '../cart/cart.entity';
 import { CartItem } from '../cart/cart-item.entity';
 import { CartService } from '../cart/cart.service';
@@ -10,14 +13,18 @@ import { Checkout } from './checkout.entity';
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
 import { PaymentStatus } from './enums/payment-status.enum';
+import { OrderStatus } from './enums/order-status.enum';
 
 @Injectable()
 export class OrderService {
 	constructor(
+		@InjectRepository(Order) private readonly orderRepo: Repository<Order>,
+		@InjectQueue('mail') private readonly mailQueue: Queue,
 		private readonly cartService: CartService,
 		private readonly paymentService: PaymentService,
 		private readonly dataSource: DataSource,
-		private readonly i18n: I18nService
+		private readonly i18n: I18nService,
+		private readonly logger: Logger
 	) {}
 
 	checkout(userId: number) {
@@ -95,6 +102,41 @@ export class OrderService {
 			await manager.update(Checkout, checkout.id, { paymentIntentId: intent.id });
 
 			return manager.findOneOrFail(Checkout, { where: { id: checkout.id }, relations: { orders: { items: true } } });
+		});
+	}
+
+	async updateStatus(orderId: number, status: OrderStatus, actorId: number, vendorId?: number) {
+		const order = await this.orderRepo.findOne({ where: { id: orderId }, relations: { checkout: true, items: true } });
+		if (!order) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_ORDER'));
+		if (vendorId !== undefined && order.vendorId !== vendorId) throw new ForbiddenException(this.i18n.t('exceptions.NOT_OWNER'));
+
+		if (order.status === OrderStatus.Delivered || order.status === OrderStatus.Cancelled)
+			throw new BadRequestException(this.i18n.t('exceptions.ORDER_FINAL', { args: { status: order.status } }));
+
+		if (status === OrderStatus.Pending)
+			throw new BadRequestException(this.i18n.t('exceptions.INVALID_ORDER_TRANSITION', { args: { from: order.status, to: status } }));
+
+		if (status === OrderStatus.Cancelled) await this.cancel(order);
+		else {
+			const res = await this.orderRepo.update({ id: orderId, status: order.status }, { status }); // race guard
+			if (!res.affected) throw new ConflictException(this.i18n.t('exceptions.ORDER_ALREADY_CHANGED'));
+		}
+
+		this.mailQueue
+			.add('order-status-changed', { orderId, clientId: order.checkout.clientId, vendorId: order.vendorId, from: order.status, to: status, actorId })
+			.catch((e) => this.logger.error(e.message, e.stack));
+		return this.orderRepo.findOneOrFail({ where: { id: orderId }, relations: { items: true } });
+	}
+
+	private cancel(order: Order) {
+		return this.dataSource.transaction(async (manager) => {
+			const res = await manager.update(Order, { id: order.id, status: order.status }, { status: OrderStatus.Cancelled });
+			if (!res.affected) throw new ConflictException(this.i18n.t('exceptions.ORDER_ALREADY_CHANGED'));
+
+			for (const { productId, quantity } of order.items)
+				if (productId) await manager.increment(Product, { id: productId }, 'stock', quantity);
+
+			if (order.checkout.status === PaymentStatus.Paid) await this.paymentService.refund(order.checkoutId, order.total); // throws → rolls back
 		});
 	}
 }
