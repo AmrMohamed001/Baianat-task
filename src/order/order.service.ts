@@ -12,6 +12,7 @@ import { PaymentService } from '../payment/payment.service';
 import { Checkout } from './checkout.entity';
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
+import { OrderStatusHistory } from './order-status-history.entity';
 import { PaymentStatus } from './enums/payment-status.enum';
 import { OrderStatus } from './enums/order-status.enum';
 
@@ -80,6 +81,7 @@ export class OrderService {
 				
 				const od = manager.create(Order, { checkoutId: checkout.id, vendorId, total, commissionAmount: Math.round((total * commissionRate) / 100) })
 				const order = await manager.save(od);
+				await manager.save(manager.create(OrderStatusHistory, { orderId: order.id, status: OrderStatus.Pending, changedBy: userId }));
 				await manager.save(
 					items.map(({ product, quantity }) =>
 						manager.create(OrderItem, {
@@ -116,27 +118,22 @@ export class OrderService {
 		if (status === OrderStatus.Pending)
 			throw new BadRequestException(this.i18n.t('exceptions.INVALID_ORDER_TRANSITION', { args: { from: order.status, to: status } }));
 
-		if (status === OrderStatus.Cancelled) await this.cancel(order);
-		else {
-			const res = await this.orderRepo.update({ id: orderId, status: order.status }, { status }); // race guard
+		await this.dataSource.transaction(async (manager) => {
+			const res = await manager.update(Order, { id: orderId, status: order.status }, { status }); // race guard
 			if (!res.affected) throw new ConflictException(this.i18n.t('exceptions.ORDER_ALREADY_CHANGED'));
-		}
+			await manager.save(manager.create(OrderStatusHistory, { orderId, status, changedBy: actorId }));
+
+			if (status === OrderStatus.Cancelled) {
+				for (const { productId, quantity } of order.items)
+					if (productId) await manager.increment(Product, { id: productId }, 'stock', quantity);
+
+				if (order.checkout.status === PaymentStatus.Paid) await this.paymentService.refund(order.checkoutId, order.total); // throws → rolls back
+			}
+		});
 
 		this.mailQueue
 			.add('order-status-changed', { orderId, clientId: order.checkout.clientId, vendorId: order.vendorId, from: order.status, to: status, actorId })
 			.catch((e) => this.logger.error(e.message, e.stack));
 		return this.orderRepo.findOneOrFail({ where: { id: orderId }, relations: { items: true } });
-	}
-
-	private cancel(order: Order) {
-		return this.dataSource.transaction(async (manager) => {
-			const res = await manager.update(Order, { id: order.id, status: order.status }, { status: OrderStatus.Cancelled });
-			if (!res.affected) throw new ConflictException(this.i18n.t('exceptions.ORDER_ALREADY_CHANGED'));
-
-			for (const { productId, quantity } of order.items)
-				if (productId) await manager.increment(Product, { id: productId }, 'stock', quantity);
-
-			if (order.checkout.status === PaymentStatus.Paid) await this.paymentService.refund(order.checkoutId, order.total); // throws → rolls back
-		});
 	}
 }

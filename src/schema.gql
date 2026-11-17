@@ -126,6 +126,22 @@ type PaginatedPublicVendors {
   totalPages: Int!
 }
 
+type Checkout {
+  id: Int!
+  total: Int!
+  status: PaymentStatus!
+  paymentIntentId: String
+  orders: [Order!]!
+  createdAt: DateTime!
+}
+
+enum PaymentStatus {
+  Pending
+  Paid
+  Failed
+  Expired
+}
+
 type OrderItem {
   id: Int!
   productId: Int
@@ -143,6 +159,7 @@ type Order {
   status: OrderStatus!
   items: [OrderItem!]!
   createdAt: DateTime!
+  history: [OrderStatusHistory!]!
 }
 
 enum OrderStatus {
@@ -153,20 +170,11 @@ enum OrderStatus {
   Cancelled
 }
 
-type Checkout {
+type OrderStatusHistory {
   id: Int!
-  total: Int!
-  status: PaymentStatus!
-  paymentIntentId: String
-  orders: [Order!]!
+  status: OrderStatus!
+  changedBy: Int
   createdAt: DateTime!
-}
-
-enum PaymentStatus {
-  Pending
-  Paid
-  Failed
-  Expired
 }
 
 type PaginatedVendors {
