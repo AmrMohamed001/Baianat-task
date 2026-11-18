@@ -1,10 +1,45 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { I18nService } from 'nestjs-i18n';
+import Stripe from 'stripe';
 
 @Injectable()
 export class PaymentService {
-	// stub until the Stripe task
+	private readonly stripeClient: Stripe;
+
+	constructor(
+		private readonly config: ConfigService,
+		private readonly i18n: I18nService,
+		private readonly logger: Logger
+	) {
+		this.stripeClient = new Stripe(config.getOrThrow('STRIPE_SECRET_KEY'));
+	}
+
 	async createIntent(amount: number, checkoutId: number) {
-		return { id: `pi_test_${checkoutId}` };
+		try {
+			const intent = await this.stripeClient.paymentIntents.create(
+				{
+					amount,
+					currency: 'usd',
+					metadata: { checkoutId: String(checkoutId) },
+					automatic_payment_methods: { enabled: true },
+				},
+				{ idempotencyKey: `checkout-${checkoutId}` }
+			);
+			return { id: intent.id, clientSecret: intent.client_secret};
+		} catch (e:any) {
+			this.logger.error(`Stripe createIntent failed: ${e?.type ?? e?.name} ${e?.code ?? ''}`.trim());
+			throw new ServiceUnavailableException(this.i18n.t('exceptions.PAYMENT_UNAVAILABLE'));
+		}
+	}
+
+	async getClientSecret(paymentIntentId: string) {
+		try {
+			return (await this.stripeClient.paymentIntents.retrieve(paymentIntentId)).client_secret!;
+		} catch (e: any) {
+			this.logger.error(`Stripe retrieve failed: ${e?.type ?? e?.name} ${e?.code ?? ''}`.trim());
+			throw new ServiceUnavailableException(this.i18n.t('exceptions.PAYMENT_UNAVAILABLE'));
+		}
 	}
 
 	async refund(checkoutId: number, amount: number) {
