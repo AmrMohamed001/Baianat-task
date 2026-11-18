@@ -6,8 +6,8 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     instrument: ObserveInstrument,
+    rawBody: true, // webhook body
   });
-  app.useBodyParser('json', { limit: '20mb' });
   app.use(morgan(':date[iso] :method :url :status :response-time ms'));
   app.useGlobalPipes(
     new ValidationPipe({

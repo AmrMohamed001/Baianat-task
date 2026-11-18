@@ -37,6 +37,8 @@
   "EMPTY_UPDATE": "أرسل حقلاً واحداً على الأقل للتعديل",
   "CART_EMPTY": "سلتك فارغة",
   "PAYMENT_UNAVAILABLE": "خدمة الدفع غير متاحة حالياً، يرجى المحاولة مرة أخرى",
+  "INVALID_WEBHOOK_REQUEST": "طلب webhook غير صالح",
+  "INVALID_WEBHOOK_SIGNATURE": "توقيع webhook غير صالح",
   "ORDER_NOT_CANCELLABLE": "يمكن إلغاء الطلب المعلق فقط، يرجى التواصل مع البائع",
   "DATE_FROM_AFTER_TO": "لا يمكن أن يكون تاريخ البداية بعد تاريخ النهاية",
   "NOT_FOUND_ORDER": "الطلب غير موجود",

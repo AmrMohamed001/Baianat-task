@@ -37,6 +37,8 @@
   "EMPTY_UPDATE": "Send at least one field to update",
   "CART_EMPTY": "Your cart is empty",
   "PAYMENT_UNAVAILABLE": "The payment service is unavailable right now, please try again",
+  "INVALID_WEBHOOK_REQUEST": "Invalid webhook request",
+  "INVALID_WEBHOOK_SIGNATURE": "Invalid webhook signature",
   "ORDER_NOT_CANCELLABLE": "Only a pending order can be cancelled, please contact the vendor",
   "DATE_FROM_AFTER_TO": "The start date can't be after the end date",
   "NOT_FOUND_ORDER": "Order not found",

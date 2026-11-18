@@ -1,4 +1,4 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { I18nService } from 'nestjs-i18n';
 import Stripe from 'stripe';
@@ -32,6 +32,17 @@ export class PaymentService {
 			throw new ServiceUnavailableException(this.i18n.t('exceptions.PAYMENT_UNAVAILABLE'));
 		}
 	}
+
+	// signature header against secret
+	getEvent(rawBody: Buffer, signature: string): Stripe.Event {
+	try {
+		return this.stripeClient.webhooks.constructEvent(rawBody, signature, this.config.getOrThrow('STRIPE_WEBHOOK_SECRET'));
+	} catch (e: any) {
+		if (e?.type === 'StripeSignatureVerificationError') throw new BadRequestException(this.i18n.t('exceptions.INVALID_WEBHOOK_SIGNATURE'));
+		throw e;
+	}
+}
+
 
 	async getClientSecret(paymentIntentId: string) {
 		try {
