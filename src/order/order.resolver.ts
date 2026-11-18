@@ -2,6 +2,7 @@ import { ForbiddenException } from '@nestjs/common';
 import { Args, Int, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { MyOrdersArgs } from './dtos/my-orders.args';
 import { CheckoutArgs } from './dtos/checkout.args';
+import { CheckoutResult } from './dtos/checkout-result.type';
 import { VendorOrdersArgs } from './dtos/vendor-orders.args';
 import { AdminOrdersArgs } from './dtos/admin-orders.args';
 import { PaginatedOrders } from './dtos/paginated-orders.type';
@@ -33,7 +34,7 @@ export class OrderResolver {
 	) {}
 
 	@Roles(UserRole.Client)
-	@Mutation(() => Checkout)
+	@Mutation(() => CheckoutResult)
 	checkout(@Args() args: CheckoutArgs, @CurrentUser() user: User) {
 		if (user.role !== UserRole.Client) throw new ForbiddenException(this.i18n.t('exceptions.FORBIDDEN'));
 		return this.orderService.checkout(user.id, args.shippingAddress);

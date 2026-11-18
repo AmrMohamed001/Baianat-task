@@ -41,7 +41,7 @@ export class OrderService {
 				where: { clientId: userId, status: PaymentStatus.Pending },
 				relations: { orders: { checkout: true } }, // items and history load by dataloaders
 			});
-			if (pending) return pending;
+			if (pending) return Object.assign(pending, { clientSecret: await this.paymentService.getClientSecret(pending.paymentIntentId!) });
 
 			const cartItems = await manager.findBy(CartItem, { cartId: cart.id });
 			if (!cartItems.length) throw new BadRequestException(this.i18n.t('exceptions.CART_EMPTY'));
@@ -103,11 +103,11 @@ export class OrderService {
 					await manager.update(Product, product.id, { stock: product.stock - quantity });
 			}
 
-			// stripe checkout ,,mock for now
-			const intent = await this.paymentService.createIntent(checkout.total, checkout.id); // throws → everything rolls back
+			const intent = await this.paymentService.createIntent(checkout.total, checkout.id);
 			await manager.update(Checkout, checkout.id, { paymentIntentId: intent.id });
 
-			return manager.findOneOrFail(Checkout, { where: { id: checkout.id }, relations: { orders: { checkout: true } } });
+			const saved = await manager.findOneOrFail(Checkout, { where: { id: checkout.id }, relations: { orders: { checkout: true } } });
+			return Object.assign(saved, { clientSecret: intent.clientSecret });
 		});
 	}
 
