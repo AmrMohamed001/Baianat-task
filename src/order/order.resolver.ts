@@ -1,6 +1,8 @@
 import { ForbiddenException } from '@nestjs/common';
 import { Args, Int, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { MyOrdersArgs } from './dtos/my-orders.args';
+import { CheckoutArgs } from './dtos/checkout.args';
+import { VendorOrdersArgs } from './dtos/vendor-orders.args';
 import { PaginatedOrders } from './dtos/paginated-orders.type';
 import { I18nService } from 'nestjs-i18n';
 import { OrderService } from './order.service';
@@ -31,9 +33,9 @@ export class OrderResolver {
 
 	@Roles(UserRole.Client)
 	@Mutation(() => Checkout)
-	checkout(@CurrentUser() user: User) {
+	checkout(@Args() args: CheckoutArgs, @CurrentUser() user: User) {
 		if (user.role !== UserRole.Client) throw new ForbiddenException(this.i18n.t('exceptions.FORBIDDEN'));
-		return this.orderService.checkout(user.id);
+		return this.orderService.checkout(user.id, args.shippingAddress);
 	}
 
 	@Roles(UserRole.Client)
@@ -48,6 +50,13 @@ export class OrderResolver {
 	order(@Args('id', { type: () => Int }) id: number, @CurrentUser() user: User) {
 		if (user.role !== UserRole.Client) throw new ForbiddenException(this.i18n.t('exceptions.FORBIDDEN'));
 		return this.orderService.findOne(id, user.id);
+	}
+
+	@VerifiedVendor()
+	@Query(() => PaginatedOrders)
+	vendorOrders(@Args() args: VendorOrdersArgs, @CurrentVendor() vendor: Vendor) {
+		if (!vendor) throw new ForbiddenException(this.i18n.t('exceptions.FORBIDDEN'));
+		return this.orderService.vendorOrders(args, vendor.id);
 	}
 
 	@VerifiedVendor()
@@ -69,6 +78,16 @@ export class OrderResolver {
 	paymentStatus(@Parent() order: Order) {
 		return order.checkout.status;
 	}
+	@ResolveField(() => String)
+	shippingAddress(@Parent() order: Order) {
+		return order.checkout.shippingAddress;
+	}
+
+	@ResolveField(() => String, { nullable: true, description: 'only filled in the vendor views' })
+	clientName(@Parent() order: Order) {
+		return order.checkout?.client?.fullname ?? null;
+	}
+
 	@ResolveField(() => [OrderStatusHistory])
 	history(@Parent() order: Order) {
 		return this.historyLoader.byOrderId.load(order.id);

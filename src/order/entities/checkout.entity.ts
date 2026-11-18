@@ -23,6 +23,10 @@ export class Checkout {
 	@Field(() => Int) // cents
 	total: number;
 
+	@Column({ type: 'varchar', length: 500 })
+	@Field()
+	shippingAddress: string;
+
 	@Column({ type: 'enum', enum: PaymentStatus, default: PaymentStatus.Pending })
 	@Field(() => PaymentStatus)
 	status: PaymentStatus;

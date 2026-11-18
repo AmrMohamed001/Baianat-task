@@ -14,6 +14,7 @@ import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { OrderStatusHistory } from './entities/order-status-history.entity';
 import { MyOrdersArgs } from './dtos/my-orders.args';
+import { VendorOrdersArgs } from './dtos/vendor-orders.args';
 import { paginate } from '../common/query/paginate';
 import { PaymentStatus } from './enums/payment-status.enum';
 import { OrderStatus } from './enums/order-status.enum';
@@ -30,7 +31,7 @@ export class OrderService {
 		private readonly logger: Logger
 	) {}
 
-	checkout(userId: number) {
+	checkout(userId: number, shippingAddress: string) {
 		return this.dataSource.transaction(async (manager) => {
 			// lock the cart
 			const cart = await manager.findOneOrFail(Cart, { where: { userId }, lock: { mode: 'pessimistic_write' } });
@@ -74,7 +75,7 @@ export class OrderService {
 
 			// creating checkout
 			const checkout_total = Array.from(byVendor.values()).reduce((sum, { total }) => sum + total, 0);
-			const checkout_item = manager.create(Checkout, { clientId: userId, total: checkout_total})
+			const checkout_item = manager.create(Checkout, { clientId: userId, total: checkout_total, shippingAddress })
 			const checkout = await manager.save(checkout_item);
 
 			// creating orders and items 
@@ -120,6 +121,19 @@ export class OrderService {
 		return paginate(qb, args);
 	}
 
+	vendorOrders(args: VendorOrdersArgs, vendorId: number) {
+		const qb = this.orderRepo
+			.createQueryBuilder('order')
+			.innerJoinAndSelect('order.checkout', 'checkout')
+			.innerJoin('checkout.client', 'client')
+			.addSelect(['client.id', 'client.fullname'])
+			.where('order.vendorId = :vendorId', { vendorId })
+			.orderBy('order.createdAt', 'DESC')
+			.addOrderBy('order.id', 'DESC');
+		if (args.status) qb.andWhere('order.status = :status', { status: args.status });
+		return paginate(qb, args);
+	}
+
 	async findOne(id: number, clientId: number) {
 		const order = await this.orderRepo.findOne({ where: { id, checkout: { clientId } }, relations: { checkout: true } });
 		if (!order) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_ORDER'));
@@ -153,6 +167,6 @@ export class OrderService {
 		this.mailQueue
 			.add('order-status-changed', { orderId, clientId: order.checkout.clientId, vendorId: order.vendorId, from: order.status, to: status, actorId })
 			.catch((e) => this.logger.error(e.message, e.stack));
-		return this.orderRepo.findOneOrFail({ where: { id: orderId }, relations: { checkout: true } });
+		return this.orderRepo.findOneOrFail({ where: { id: orderId }, relations: { checkout: { client: true } } });
 	}
 }

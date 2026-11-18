@@ -129,6 +129,7 @@ type PaginatedPublicVendors {
 type Checkout {
   id: Int!
   total: Int!
+  shippingAddress: String!
   status: PaymentStatus!
   paymentIntentId: String
   orders: [Order!]!
@@ -160,6 +161,10 @@ type Order {
   items: [OrderItem!]!
   createdAt: DateTime!
   paymentStatus: PaymentStatus!
+  shippingAddress: String!
+
+  """only filled in the vendor views"""
+  clientName: String
   history: [OrderStatusHistory!]!
 }
 
@@ -237,6 +242,7 @@ type Query {
   ): PaginatedProducts!
   myOrders(page: Int! = 1, limit: Int! = 20, status: OrderStatus): PaginatedOrders!
   order(id: Int!): Order!
+  vendorOrders(page: Int! = 1, limit: Int! = 20, status: OrderStatus): PaginatedOrders!
   vendors(page: Int! = 1, limit: Int! = 20, status: VendorStatus): PaginatedVendors!
   myStore: Vendor!
   myWallet: Wallet!
@@ -274,7 +280,7 @@ type Mutation {
   createProduct(input: CreateProductInput!): Product!
   updateProduct(id: Int!, input: UpdateProductInput!): Product!
   deleteProduct(id: Int!): Boolean!
-  checkout: Checkout!
+  checkout(shippingAddress: String!): Checkout!
   updateOrderStatus(orderId: Int!, status: OrderStatus!): Order!
   setVendorCommission(vendorId: Int!, commissionRate: Float!): Vendor!
   approveVendor(vendorId: Int!): Vendor!
