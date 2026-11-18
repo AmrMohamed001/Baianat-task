@@ -3,6 +3,7 @@ import { Args, Int, Mutation, Parent, Query, ResolveField, Resolver } from '@nes
 import { MyOrdersArgs } from './dtos/my-orders.args';
 import { CheckoutArgs } from './dtos/checkout.args';
 import { VendorOrdersArgs } from './dtos/vendor-orders.args';
+import { AdminOrdersArgs } from './dtos/admin-orders.args';
 import { PaginatedOrders } from './dtos/paginated-orders.type';
 import { I18nService } from 'nestjs-i18n';
 import { OrderService } from './order.service';
@@ -50,6 +51,12 @@ export class OrderResolver {
 	order(@Args('id', { type: () => Int }) id: number, @CurrentUser() user: User) {
 		if (user.role !== UserRole.Client) throw new ForbiddenException(this.i18n.t('exceptions.FORBIDDEN'));
 		return this.orderService.findOne(id, user.id);
+	}
+
+	@Roles(UserRole.SuperAdmin)
+	@Query(() => PaginatedOrders)
+	adminOrders(@Args() args: AdminOrdersArgs) {
+		return this.orderService.adminOrders(args);
 	}
 
 	@VerifiedVendor()

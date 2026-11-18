@@ -36,6 +36,7 @@
   "CATEGORY_HAS_PRODUCTS": "This category still has products, move them to another category first",
   "EMPTY_UPDATE": "Send at least one field to update",
   "CART_EMPTY": "Your cart is empty",
+  "DATE_FROM_AFTER_TO": "The start date can't be after the end date",
   "NOT_FOUND_ORDER": "Order not found",
   "ORDER_FINAL": "This order is already {status} and can't be changed",
   "INVALID_ORDER_TRANSITION": "An order can't move from {from} to {to}",

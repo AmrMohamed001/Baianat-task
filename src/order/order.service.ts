@@ -15,6 +15,7 @@ import { OrderItem } from './entities/order-item.entity';
 import { OrderStatusHistory } from './entities/order-status-history.entity';
 import { MyOrdersArgs } from './dtos/my-orders.args';
 import { VendorOrdersArgs } from './dtos/vendor-orders.args';
+import { AdminOrdersArgs } from './dtos/admin-orders.args';
 import { paginate } from '../common/query/paginate';
 import { PaymentStatus } from './enums/payment-status.enum';
 import { OrderStatus } from './enums/order-status.enum';
@@ -131,6 +132,26 @@ export class OrderService {
 			.orderBy('order.createdAt', 'DESC')
 			.addOrderBy('order.id', 'DESC');
 		if (args.status) qb.andWhere('order.status = :status', { status: args.status });
+		return paginate(qb, args);
+	}
+
+	adminOrders(args: AdminOrdersArgs) {
+		const { status, paymentStatus, vendorId, clientId, from, to } = args;
+		if (from && to && from > to) throw new BadRequestException(this.i18n.t('exceptions.DATE_FROM_AFTER_TO'));
+
+		const qb = this.orderRepo
+			.createQueryBuilder('order')
+			.innerJoinAndSelect('order.checkout', 'checkout')
+			.innerJoin('checkout.client', 'client')
+			.addSelect(['client.id', 'client.fullname'])
+			.orderBy('order.createdAt', 'DESC')
+			.addOrderBy('order.id', 'DESC');
+		if (status) qb.andWhere('order.status = :status', { status });
+		if (paymentStatus) qb.andWhere('checkout.status = :paymentStatus', { paymentStatus });
+		if (vendorId) qb.andWhere('order.vendorId = :vendorId', { vendorId });
+		if (clientId) qb.andWhere('checkout.clientId = :clientId', { clientId });
+		if (from) qb.andWhere('order.createdAt >= :from', { from });
+		if (to) qb.andWhere('order.createdAt <= :to', { to });
 		return paginate(qb, args);
 	}
 

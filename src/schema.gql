@@ -242,6 +242,7 @@ type Query {
   ): PaginatedProducts!
   myOrders(page: Int! = 1, limit: Int! = 20, status: OrderStatus): PaginatedOrders!
   order(id: Int!): Order!
+  adminOrders(page: Int! = 1, limit: Int! = 20, status: OrderStatus, paymentStatus: PaymentStatus, vendorId: Int, clientId: Int, from: DateTime, to: DateTime): PaginatedOrders!
   vendorOrders(page: Int! = 1, limit: Int! = 20, status: OrderStatus): PaginatedOrders!
   vendors(page: Int! = 1, limit: Int! = 20, status: VendorStatus): PaginatedVendors!
   myStore: Vendor!
