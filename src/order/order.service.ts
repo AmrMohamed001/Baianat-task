@@ -172,22 +172,47 @@ export class OrderService {
 		if (status === OrderStatus.Pending)
 			throw new BadRequestException(this.i18n.t('exceptions.INVALID_ORDER_TRANSITION', { args: { from: order.status, to: status } }));
 
+		return this.applyStatus(order, status, actorId);
+	}
+
+	async cancelOrder(orderId: number, clientId: number) {
+		const order = await this.orderRepo.findOne({ where: { id: orderId, checkout: { clientId } }, relations: { checkout: true, items: true } }); // someone else's order = not found
+		if (!order) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_ORDER'));
+
+		if (order.status === OrderStatus.Cancelled) return order; // already cancelled
+		if (order.status !== OrderStatus.Pending) throw new BadRequestException(this.i18n.t('exceptions.ORDER_NOT_CANCELLABLE'));
+
+		return this.applyStatus(order, OrderStatus.Cancelled, clientId);
+	}
+
+	// status update + history + (cancel: stock back, refund) in one transaction, then the notification job
+	private async applyStatus(order: Order, status: OrderStatus, actorId: number) {
 		await this.dataSource.transaction(async (manager) => {
-			const res = await manager.update(Order, { id: orderId, status: order.status }, { status }); // race guard
+			const res = await manager.update(Order, { id: order.id, status: order.status }, { status }); // race guard
 			if (!res.affected) throw new ConflictException(this.i18n.t('exceptions.ORDER_ALREADY_CHANGED'));
-			await manager.save(manager.create(OrderStatusHistory, { orderId, status, changedBy: actorId }));
+			await manager.save(manager.create(OrderStatusHistory, { orderId: order.id, status, changedBy: actorId }));
 
 			if (status === OrderStatus.Cancelled) {
-				for (const { productId, quantity } of order.items)
-					if (productId) await manager.increment(Product, { id: productId }, 'stock', quantity);
+				// lock the product 
+				const products = await manager.find(Product, {
+					where: { id: In(order.items.map((i) => i.productId!)) },
+					order: { id: 'ASC' },
+					withDeleted:true,
+					lock: { mode: 'pessimistic_write' },
+				});
+				// return the quantity
+				for (const { productId, quantity } of order.items) {
+					const product = products.find((p) => p.id === productId);
+					if (product) await manager.update(Product, product.id, { stock: product.stock + quantity });
+				}
 
 				if (order.checkout.status === PaymentStatus.Paid) await this.paymentService.refund(order.checkoutId, order.total);
 			}
 		});
 
 		this.mailQueue
-			.add('order-status-changed', { orderId, clientId: order.checkout.clientId, vendorId: order.vendorId, from: order.status, to: status, actorId })
+			.add('order-status-changed', { orderId: order.id, clientId: order.checkout.clientId, vendorId: order.vendorId, from: order.status, to: status, actorId })
 			.catch((e) => this.logger.error(e.message, e.stack));
-		return this.orderRepo.findOneOrFail({ where: { id: orderId }, relations: { checkout: { client: true } } });
+		return this.orderRepo.findOneOrFail({ where: { id: order.id }, relations: { checkout: { client: true } } });
 	}
 }

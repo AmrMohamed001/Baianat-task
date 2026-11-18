@@ -53,6 +53,13 @@ export class OrderResolver {
 		return this.orderService.findOne(id, user.id);
 	}
 
+	@Roles(UserRole.Client)
+	@Mutation(() => Order)
+	cancelOrder(@Args('orderId', { type: () => Int }) orderId: number, @CurrentUser() user: User) {
+		if (user.role !== UserRole.Client) throw new ForbiddenException(this.i18n.t('exceptions.FORBIDDEN'));
+		return this.orderService.cancelOrder(orderId, user.id);
+	}
+
 	@Roles(UserRole.SuperAdmin)
 	@Query(() => PaginatedOrders)
 	adminOrders(@Args() args: AdminOrdersArgs) {

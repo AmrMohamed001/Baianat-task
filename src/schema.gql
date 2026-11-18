@@ -282,6 +282,7 @@ type Mutation {
   updateProduct(id: Int!, input: UpdateProductInput!): Product!
   deleteProduct(id: Int!): Boolean!
   checkout(shippingAddress: String!): Checkout!
+  cancelOrder(orderId: Int!): Order!
   updateOrderStatus(orderId: Int!, status: OrderStatus!): Order!
   setVendorCommission(vendorId: Int!, commissionRate: Float!): Vendor!
   approveVendor(vendorId: Int!): Vendor!
