@@ -114,8 +114,6 @@ enum PaymentStatus {
 type Transaction {
   id: Int!
   type: TransactionType!
-
-  """cents, positive adds to the balance and negative takes from it"""
   amount: Int!
   orderId: Int
   paymentIntentId: String
@@ -210,16 +208,16 @@ type PaginatedOrders {
   totalPages: Int!
 }
 
-type PaginatedVendors {
-  data: [Vendor!]!
+type PaginatedTransactions {
+  data: [Transaction!]!
   total: Int!
   page: Int!
   limit: Int!
   totalPages: Int!
 }
 
-type PaginatedTransactions {
-  data: [Transaction!]!
+type PaginatedVendors {
+  data: [Vendor!]!
   total: Int!
   page: Int!
   limit: Int!
@@ -271,10 +269,10 @@ type Query {
   order(id: Int!): Order!
   adminOrders(page: Int! = 1, limit: Int! = 20, status: OrderStatus, paymentStatus: PaymentStatus, vendorId: Int, clientId: Int, from: DateTime, to: DateTime): PaginatedOrders!
   vendorOrders(page: Int! = 1, limit: Int! = 20, status: OrderStatus): PaginatedOrders!
-  vendors(page: Int! = 1, limit: Int! = 20, status: VendorStatus): PaginatedVendors!
-  myStore: Vendor!
   myWallet: Wallet!
   wallet(userId: Int!): Wallet!
+  vendors(page: Int! = 1, limit: Int! = 20, status: VendorStatus): PaginatedVendors!
+  myStore: Vendor!
   myFollowings(page: Int! = 1, limit: Int! = 20): PaginatedPublicVendors!
   myFollowers(page: Int! = 1, limit: Int! = 20): PaginatedFollowers!
   categories: [Category!]!

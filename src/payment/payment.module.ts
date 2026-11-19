@@ -6,9 +6,10 @@ import { StripeWebhookService } from './webhook.service';
 import { StripeWebhookController } from './webhook.controller';
 import { StripeEvent } from './entities/stripe-event.entity';
 import { Checkout } from '../order/entities/checkout.entity';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([StripeEvent, Checkout]), BullModule.registerQueue({ name: 'mail' })],
+	imports: [TypeOrmModule.forFeature([StripeEvent, Checkout]), BullModule.registerQueue({ name: 'mail' }), WalletModule],
 	controllers: [StripeWebhookController],
 	providers: [PaymentService, StripeWebhookService],
 	exports: [PaymentService],
