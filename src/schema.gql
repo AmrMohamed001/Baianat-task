@@ -118,6 +118,7 @@ type Transaction {
   """cents, positive adds to the balance and negative takes from it"""
   amount: Int!
   orderId: Int
+  paymentIntentId: String
   createdAt: DateTime!
 }
 

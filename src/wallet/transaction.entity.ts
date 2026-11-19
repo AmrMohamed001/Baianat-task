@@ -5,6 +5,7 @@ import { Order } from '../order/entities/order.entity';
 import { TransactionType } from './enums/transaction-type.enum';
 
 @Index(['walletId'])
+@Index(['paymentIntentId'])
 @Entity('sys_transactions')
 @ObjectType()
 export class Transaction {
@@ -34,6 +35,10 @@ export class Transaction {
 	@ManyToOne(() => Order, { onDelete: 'SET NULL', nullable: true })
 	@JoinColumn({ name: 'orderId' })
 	order: Order | null;
+
+	@Column({ type: 'varchar', length: 255, nullable: true })
+	@Field(() => String, { nullable: true})
+	paymentIntentId: string | null;
 
 	@CreateDateColumn({ type: 'timestamptz' })
 	@Field()
