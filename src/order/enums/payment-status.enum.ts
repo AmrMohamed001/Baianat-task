@@ -4,7 +4,7 @@ export enum PaymentStatus {
 	Pending = 'Pending',
 	Paid = 'Paid',
 	Failed = 'Failed',
-	Expired = 'Expired',
+	Refunded = 'Refunded'
 }
 
 registerEnumType(PaymentStatus, { name: 'PaymentStatus' });

@@ -9,6 +9,7 @@ import { OrderStatusHistory } from './entities/order-status-history.entity';
 import { OrderResolver } from './order.resolver';
 import { CartModule } from '../cart/cart.module';
 import { PaymentModule } from '../payment/payment.module';
+import { WalletModule } from '../wallet/wallet.module';
 import { DataloaderModule } from '../dataloader/dataloader.module';
 
 @Module({
@@ -17,6 +18,7 @@ import { DataloaderModule } from '../dataloader/dataloader.module';
 		BullModule.registerQueue({ name: 'mail' }),
 		CartModule,
 		PaymentModule,
+		WalletModule,
 		DataloaderModule,
 	],
 	providers: [OrderService, OrderResolver],

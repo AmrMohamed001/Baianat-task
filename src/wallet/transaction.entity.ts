@@ -50,6 +50,10 @@ export class Transaction {
 	@Field(() => String, { nullable: true})
 	paymentIntentId: string | null;
 
+	@Column({ type: 'varchar', length: 255, nullable: true })
+	@Field(() => String, { nullable: true})
+	stripeRefundId: string | null;
+
 	@CreateDateColumn({ type: 'timestamptz' })
 	@Field()
 	createdAt: Date;

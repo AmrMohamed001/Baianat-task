@@ -3,12 +3,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { I18nContext, I18nService } from 'nestjs-i18n';
-import { DataSource, In, Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { Cart } from '../cart/cart.entity';
 import { CartItem } from '../cart/cart-item.entity';
 import { CartService } from '../cart/cart.service';
 import { Product } from '../product/product.entity';
 import { PaymentService } from '../payment/payment.service';
+import { WalletService } from '../wallet/wallet.service';
+import { Transaction } from '../wallet/transaction.entity';
+import { TransactionType } from '../wallet/enums/transaction-type.enum';
+import { Vendor } from '../vendor/vendor.entity';
 import { Checkout } from './entities/checkout.entity';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
@@ -22,15 +27,20 @@ import { OrderStatus } from './enums/order-status.enum';
 
 @Injectable()
 export class OrderService {
+	private platform_user_id:number
 	constructor(
 		@InjectRepository(Order) private readonly orderRepo: Repository<Order>,
 		@InjectQueue('mail') private readonly mailQueue: Queue,
 		private readonly cartService: CartService,
 		private readonly paymentService: PaymentService,
+		private readonly walletService: WalletService,
+		private readonly config: ConfigService,
 		private readonly dataSource: DataSource,
 		private readonly i18n: I18nService,
 		private readonly logger: Logger
-	) {}
+	) {
+		this.platform_user_id= +config.get('SUPERADMIN_ID_FOR_COMMISIION')
+	}
 
 	checkout(userId: number, shippingAddress: string) {
 		return this.dataSource.transaction(async (manager) => {
@@ -147,7 +157,8 @@ export class OrderService {
 			.orderBy('order.createdAt', 'DESC')
 			.addOrderBy('order.id', 'DESC');
 		if (status) qb.andWhere('order.status = :status', { status });
-		if (paymentStatus) qb.andWhere('checkout.status = :paymentStatus', { paymentStatus });
+		if (paymentStatus === PaymentStatus.Refunded) qb.andWhere('order.stripeRefundId IS NOT NULL');
+		else if (paymentStatus) qb.andWhere('checkout.status = :paymentStatus AND order.stripeRefundId IS NULL', { paymentStatus });
 		if (vendorId) qb.andWhere('order.vendorId = :vendorId', { vendorId });
 		if (clientId) qb.andWhere('checkout.clientId = :clientId', { clientId });
 		if (from) qb.andWhere('order.createdAt >= :from', { from });
@@ -185,6 +196,54 @@ export class OrderService {
 		return this.applyStatus(order, OrderStatus.Cancelled, clientId);
 	}
 
+	// call refund + send notification (either cancel order or just refund it if canceled)
+	async refundOrder(orderId: number, adminId: number) {
+		const order = await this.orderRepo.findOne({ where: { id: orderId }, relations: { checkout: true, items: true } });
+		if (!order) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_ORDER'));
+		if (order.checkout.status !== PaymentStatus.Paid) throw new BadRequestException(this.i18n.t('exceptions.REFUND_ORDER_NOT_PAID'));
+		if (order.stripeRefundId) throw new BadRequestException(this.i18n.t('exceptions.ORDER_ALREADY_REFUNDED'));
+
+
+		//either cancel order and return
+		if (order.status !== OrderStatus.Cancelled) return this.applyStatus(order, OrderStatus.Cancelled, adminId);
+
+
+		//or just refund it if canceled
+		await this.dataSource.transaction((manager) => this.refund(manager, order, adminId));
+
+		// then send mail
+		this.mailQueue
+			.add('order-refunded', { orderId: order.id, clientId: order.checkout.clientId, vendorId: order.vendorId, amount: order.total })
+			.catch((e) => this.logger.error(e.message, e.stack));
+
+
+		return this.orderRepo.findOneOrFail({ where: { id: order.id }, relations: { checkout: { client: true } } });
+	}
+
+	// handle wallets - call refund - save refundid
+	private async refund(manager: EntityManager, order: Order, actorId: number) {
+		const locked = await manager.findOneOrFail(Order, { where: { id: order.id }, lock: { mode: 'pessimistic_write' } });
+		if (locked.stripeRefundId) throw new BadRequestException(this.i18n.t('exceptions.ORDER_ALREADY_REFUNDED'));
+
+		const vendor = await manager.findOneByOrFail(Vendor, { id: order.vendorId });
+		const meta = { orderId: order.id, paymentIntentId: order.checkout.paymentIntentId!, createdBy: actorId };
+
+		// money vendor + transaction
+		const vendorShare = order.total - order.commissionAmount;
+		if (vendorShare > 0) await this.walletService.applyTransaction(manager, vendor.ownerId, TransactionType.Refund, vendorShare, meta);
+		
+		// money paltform admin + transaction
+		if (order.commissionAmount > 0)
+			await this.walletService.applyTransaction(manager, Number(this.config.getOrThrow('SUPERADMIN_ID_FOR_COMMISIION')), TransactionType.Refund, order.commissionAmount, meta);
+
+		// stripe refund
+		const stripeRefundId = await this.paymentService.refund(meta.paymentIntentId, order.total, order.id);
+		
+		// set the refundid to the order and transactions
+		await manager.update(Transaction, { orderId: order.id, type: TransactionType.Refund }, { stripeRefundId });
+		await manager.update(Order, order.id, { stripeRefundId });
+	}
+
 	// status update + history + (cancel: stock back, refund) in one transaction, then the notification job
 	private async applyStatus(order: Order, status: OrderStatus, actorId: number) {
 		await this.dataSource.transaction(async (manager) => {
@@ -206,7 +265,7 @@ export class OrderService {
 					if (product) await manager.update(Product, product.id, { stock: product.stock + quantity });
 				}
 
-				if (order.checkout.status === PaymentStatus.Paid) await this.paymentService.refund(order.checkoutId, order.total);
+				if (order.checkout.status === PaymentStatus.Paid && !order.stripeRefundId) await this.refund(manager, order, actorId);
 			}
 		});
 
