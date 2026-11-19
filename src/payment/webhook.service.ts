@@ -55,6 +55,8 @@ export class StripeWebhookService {
 		const res = await manager.update(Checkout, { id: checkout.id, status: PaymentStatus.Pending }, { status: PaymentStatus.Paid }); // race guard
 		if (!res.affected) return;
 
+		await manager.update(Order, { checkoutId: checkout.id }, { paymentStatus: PaymentStatus.Paid });
+
 		const cart = await manager.findOneBy(Cart, { userId: checkout.clientId });
 		if (cart) await manager.delete(CartItem, { cartId: cart.id });
 
@@ -73,6 +75,8 @@ export class StripeWebhookService {
 
 		const res = await manager.update(Checkout, { id: checkout.id, status: PaymentStatus.Pending }, { status: PaymentStatus.Failed });
 		if (!res.affected) return;
+
+		await manager.update(Order, { checkoutId: checkout.id }, { paymentStatus: PaymentStatus.Failed });
 
 		const orders = await manager.find(Order, { where: { checkoutId: checkout.id, status: OrderStatus.Pending }, relations: { items: true } });
 		for (const order of orders) {

@@ -4,6 +4,7 @@ import { Checkout } from './checkout.entity';
 import { OrderItem } from './order-item.entity';
 import { Vendor } from '../../vendor/vendor.entity';
 import { OrderStatus } from '../enums/order-status.enum';
+import { PaymentStatus } from '../enums/payment-status.enum';
 
 @Index(['checkoutId'])
 @Index(['vendorId'])
@@ -41,8 +42,16 @@ export class Order {
 	@Field(() => OrderStatus)
 	status: OrderStatus;
 
+	@Column({ type: 'enum', enum: PaymentStatus, default: PaymentStatus.Pending })
+	@Field(() => PaymentStatus)
+	paymentStatus: PaymentStatus;
+
 	@Column({ type: 'varchar', length: 255, nullable: true })
 	stripeRefundId: string | null;
+
+	@Column({ type: 'timestamptz', nullable: true })
+	@Field(() => Date, { nullable: true })
+	refundedAt: Date | null;
 
 	@OneToMany(() => OrderItem, (item) => item.order)
 	@Field(() => [OrderItem])

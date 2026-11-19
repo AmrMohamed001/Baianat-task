@@ -157,8 +157,7 @@ export class OrderService {
 			.orderBy('order.createdAt', 'DESC')
 			.addOrderBy('order.id', 'DESC');
 		if (status) qb.andWhere('order.status = :status', { status });
-		if (paymentStatus === PaymentStatus.Refunded) qb.andWhere('order.stripeRefundId IS NOT NULL');
-		else if (paymentStatus) qb.andWhere('checkout.status = :paymentStatus AND order.stripeRefundId IS NULL', { paymentStatus });
+		if (paymentStatus) qb.andWhere('order.paymentStatus = :paymentStatus', { paymentStatus });
 		if (vendorId) qb.andWhere('order.vendorId = :vendorId', { vendorId });
 		if (clientId) qb.andWhere('checkout.clientId = :clientId', { clientId });
 		if (from) qb.andWhere('order.createdAt >= :from', { from });
@@ -200,8 +199,8 @@ export class OrderService {
 	async refundOrder(orderId: number, adminId: number) {
 		const order = await this.orderRepo.findOne({ where: { id: orderId }, relations: { checkout: true, items: true } });
 		if (!order) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_ORDER'));
-		if (order.checkout.status !== PaymentStatus.Paid) throw new BadRequestException(this.i18n.t('exceptions.REFUND_ORDER_NOT_PAID'));
-		if (order.stripeRefundId) throw new BadRequestException(this.i18n.t('exceptions.ORDER_ALREADY_REFUNDED'));
+		if (order.paymentStatus === PaymentStatus.Refunded) throw new BadRequestException(this.i18n.t('exceptions.ORDER_ALREADY_REFUNDED'));
+		if (order.paymentStatus !== PaymentStatus.Paid) throw new BadRequestException(this.i18n.t('exceptions.REFUND_ORDER_NOT_PAID'));
 
 
 		//either cancel order and return
@@ -223,7 +222,7 @@ export class OrderService {
 	// handle wallets - call refund - save refundid
 	private async refund(manager: EntityManager, order: Order, actorId: number) {
 		const locked = await manager.findOneOrFail(Order, { where: { id: order.id }, lock: { mode: 'pessimistic_write' } });
-		if (locked.stripeRefundId) throw new BadRequestException(this.i18n.t('exceptions.ORDER_ALREADY_REFUNDED'));
+		if (locked.paymentStatus === PaymentStatus.Refunded) throw new BadRequestException(this.i18n.t('exceptions.ORDER_ALREADY_REFUNDED'));
 
 		const vendor = await manager.findOneByOrFail(Vendor, { id: order.vendorId });
 		const meta = { orderId: order.id, paymentIntentId: order.checkout.paymentIntentId!, createdBy: actorId };
@@ -241,7 +240,7 @@ export class OrderService {
 		
 		// set the refundid to the order and transactions
 		await manager.update(Transaction, { orderId: order.id, type: TransactionType.Refund }, { stripeRefundId });
-		await manager.update(Order, order.id, { stripeRefundId });
+		await manager.update(Order, order.id, { paymentStatus: PaymentStatus.Refunded, stripeRefundId, refundedAt: new Date() });
 	}
 
 	// status update + history + (cancel: stock back, refund) in one transaction, then the notification job
@@ -265,7 +264,7 @@ export class OrderService {
 					if (product) await manager.update(Product, product.id, { stock: product.stock + quantity });
 				}
 
-				if (order.checkout.status === PaymentStatus.Paid && !order.stripeRefundId) await this.refund(manager, order, actorId);
+				if (order.paymentStatus === PaymentStatus.Paid) await this.refund(manager, order, actorId);
 			}
 		});
 

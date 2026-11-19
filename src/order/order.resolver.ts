@@ -21,7 +21,6 @@ import { User } from '../user/user.entity';
 import { OrderHistoryLoader } from '../dataloader/order-history.loader';
 import { OrderItemLoader } from '../dataloader/order-item.loader';
 import { OrderItem } from './entities/order-item.entity';
-import { PaymentStatus } from './enums/payment-status.enum';
 import { OrderStatusHistory } from './entities/order-status-history.entity';
 
 @Resolver(() => Order)
@@ -94,10 +93,6 @@ export class OrderResolver {
 	@ResolveField(() => [OrderItem])
 	items(@Parent() order: Order) {
 		return this.itemLoader.byOrderId.load(order.id);
-	}
-	@ResolveField(() => PaymentStatus) 
-	paymentStatus(@Parent() order: Order) {
-		return order.stripeRefundId ? PaymentStatus.Refunded : order.checkout.status;
 	}
 	@ResolveField(() => String)
 	shippingAddress(@Parent() order: Order) {
