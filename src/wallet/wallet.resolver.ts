@@ -5,6 +5,7 @@ import { PaginatedTransactions } from './dtos/paginated-transactions.type';
 import { VerifiedVendor } from '../vendor/decorators/verified-vendor.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { TransactionsArgs } from './dtos/transactions.args';
 import { PaginationArgs } from '../common/query/types/pagination.args';
 import { UserRole } from '../user/enums/user-role.enum';
 import { User } from '../user/user.entity';
@@ -23,6 +24,12 @@ export class WalletResolver {
 	@Query(() => Wallet)
 	wallet(@Args('userId', { type: () => Int }) userId: number) {
 		return this.walletService.findByUser(userId);
+	}
+
+	@Roles(UserRole.SuperAdmin)
+	@Query(() => PaginatedTransactions)
+	allTransactions(@Args() args: TransactionsArgs) {
+		return this.walletService.allTransactions(args);
 	}
 
 	@ResolveField(() => PaginatedTransactions)

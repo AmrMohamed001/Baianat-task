@@ -113,6 +113,7 @@ enum PaymentStatus {
 
 type Transaction {
   id: Int!
+  walletId: Int!
   type: TransactionType!
   amount: Int!
   orderId: Int
@@ -271,6 +272,17 @@ type Query {
   vendorOrders(page: Int! = 1, limit: Int! = 20, status: OrderStatus): PaginatedOrders!
   myWallet: Wallet!
   wallet(userId: Int!): Wallet!
+  allTransactions(
+    page: Int! = 1
+    limit: Int! = 20
+    type: TransactionType
+
+    """transactions of this vendor wallet"""
+    vendorId: Int
+    orderId: Int
+    from: DateTime
+    to: DateTime
+  ): PaginatedTransactions!
   vendors(page: Int! = 1, limit: Int! = 20, status: VendorStatus): PaginatedVendors!
   myStore: Vendor!
   myFollowings(page: Int! = 1, limit: Int! = 20): PaginatedPublicVendors!

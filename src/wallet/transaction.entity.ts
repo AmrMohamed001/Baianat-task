@@ -14,6 +14,7 @@ export class Transaction {
 	id: number;
 
 	@Column()
+	@Field(() => Int)
 	walletId: number;
 
 	@ManyToOne(() => Wallet, { onDelete: 'CASCADE' })
