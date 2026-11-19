@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { DataSource, EntityManager, In } from 'typeorm';
@@ -12,12 +13,16 @@ import { OrderStatusHistory } from '../order/entities/order-status-history.entit
 import { PaymentStatus } from '../order/enums/payment-status.enum';
 import { OrderStatus } from '../order/enums/order-status.enum';
 import { Product } from '../product/product.entity';
+import { WalletService } from '../wallet/wallet.service';
+import { TransactionType } from '../wallet/enums/transaction-type.enum';
 
 @Injectable()
 export class StripeWebhookService {
 	constructor(
 		@InjectQueue('mail') private readonly mailQueue: Queue,
 		private readonly dataSource: DataSource,
+		private readonly walletService: WalletService,
+		private readonly config: ConfigService,
 		private readonly logger: Logger
 	) {}
 
@@ -53,6 +58,12 @@ export class StripeWebhookService {
 		const cart = await manager.findOneBy(Cart, { userId: checkout.clientId });
 		if (cart) await manager.delete(CartItem, { cartId: cart.id });
 
+		const adminId = Number(this.config.getOrThrow('SUPERADMIN_ID_FOR_COMMISIION'));
+		const orders = await manager.find(Order, { where: { checkoutId: checkout.id }, relations: { vendor: true }, order: { vendor: { ownerId: 'ASC' } } });
+		for (const order of orders){
+			await this.walletService.applyTransaction(manager, order.vendor.ownerId, TransactionType.Sale, order.total - order.commissionAmount, { orderId: order.id, paymentIntentId: intent.id });
+			await this.walletService.applyTransaction(manager, adminId, TransactionType.Sale, order.commissionAmount, { orderId: order.id, paymentIntentId: intent.id });
+		}
 		return { name: 'payment-succeeded', data: { checkoutId: checkout.id, clientId: checkout.clientId } };
 	}
 

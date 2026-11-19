@@ -25,7 +25,7 @@ export class Transaction {
 	type: TransactionType;
 
 	@Column({ type: 'bigint', transformer: { to: (v: number) => v, from: (v: string) => Number(v) } })
-	@Field(() => Int, { description: 'cents, positive adds to the balance and negative takes from it' })
+	@Field(() => Int)
 	amount: number;
 
 	@Column({ type: 'int', nullable: true })
