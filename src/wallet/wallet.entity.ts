@@ -3,12 +3,14 @@ import {
 	CreateDateColumn,
 	Entity,
 	JoinColumn,
+	OneToMany,
 	OneToOne,
 	PrimaryGeneratedColumn,
 	UpdateDateColumn,
 } from 'typeorm';
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
 import { User } from '../user/user.entity';
+import { Transaction } from './transaction.entity';
 
 @Entity('sys_wallets')
 @ObjectType()
@@ -31,6 +33,9 @@ export class Wallet {
 	})
 	@Field(() => Float) // cents,
 	balance: number;
+
+	@OneToMany(() => Transaction, (transaction) => transaction.wallet)
+	transactions: Transaction[];
 
 	@CreateDateColumn()
 	createdAt: Date;

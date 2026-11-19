@@ -71,9 +71,66 @@ type Cart {
   total: Int!
 }
 
+type OrderItem {
+  id: Int!
+  productId: Int
+  nameAr: String!
+  nameEn: String!
+  priceAtPurchase: Int!
+  quantity: Int!
+}
+
+type Order {
+  id: Int!
+  vendorId: Int!
+  total: Int!
+  commissionAmount: Int!
+  status: OrderStatus!
+  items: [OrderItem!]!
+  createdAt: DateTime!
+  paymentStatus: PaymentStatus!
+  shippingAddress: String!
+
+  """only filled in the vendor views"""
+  clientName: String
+  history: [OrderStatusHistory!]!
+}
+
+enum OrderStatus {
+  Pending
+  Processing
+  Shipped
+  Delivered
+  Cancelled
+}
+
+enum PaymentStatus {
+  Pending
+  Paid
+  Failed
+  Expired
+}
+
+type Transaction {
+  id: Int!
+  type: TransactionType!
+
+  """cents, positive adds to the balance and negative takes from it"""
+  amount: Int!
+  orderId: Int
+  createdAt: DateTime!
+}
+
+enum TransactionType {
+  Sale
+  Payout
+  Refund
+}
+
 type Wallet {
   id: Int!
   balance: Float!
+  transactions(page: Int! = 1, limit: Int! = 20): PaginatedTransactions!
 }
 
 type User {
@@ -126,46 +183,6 @@ type PaginatedPublicVendors {
   totalPages: Int!
 }
 
-type OrderItem {
-  id: Int!
-  productId: Int
-  nameAr: String!
-  nameEn: String!
-  priceAtPurchase: Int!
-  quantity: Int!
-}
-
-type Order {
-  id: Int!
-  vendorId: Int!
-  total: Int!
-  commissionAmount: Int!
-  status: OrderStatus!
-  items: [OrderItem!]!
-  createdAt: DateTime!
-  paymentStatus: PaymentStatus!
-  shippingAddress: String!
-
-  """only filled in the vendor views"""
-  clientName: String
-  history: [OrderStatusHistory!]!
-}
-
-enum OrderStatus {
-  Pending
-  Processing
-  Shipped
-  Delivered
-  Cancelled
-}
-
-enum PaymentStatus {
-  Pending
-  Paid
-  Failed
-  Expired
-}
-
 type OrderStatusHistory {
   id: Int!
   status: OrderStatus!
@@ -194,6 +211,14 @@ type PaginatedOrders {
 
 type PaginatedVendors {
   data: [Vendor!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+}
+
+type PaginatedTransactions {
+  data: [Transaction!]!
   total: Int!
   page: Int!
   limit: Int!
@@ -248,6 +273,7 @@ type Query {
   vendors(page: Int! = 1, limit: Int! = 20, status: VendorStatus): PaginatedVendors!
   myStore: Vendor!
   myWallet: Wallet!
+  wallet(userId: Int!): Wallet!
   myFollowings(page: Int! = 1, limit: Int! = 20): PaginatedPublicVendors!
   myFollowers(page: Int! = 1, limit: Int! = 20): PaginatedFollowers!
   categories: [Category!]!
