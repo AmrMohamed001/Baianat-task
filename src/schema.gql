@@ -108,7 +108,7 @@ enum PaymentStatus {
   Pending
   Paid
   Failed
-  Expired
+  Refunded
 }
 
 type Transaction {
@@ -119,6 +119,7 @@ type Transaction {
   orderId: Int
   createdBy: Int
   paymentIntentId: String
+  stripeRefundId: String
   createdAt: DateTime!
 }
 
@@ -323,6 +324,7 @@ type Mutation {
   checkout(shippingAddress: String!): CheckoutResult!
   cancelOrder(orderId: Int!): Order!
   updateOrderStatus(orderId: Int!, status: OrderStatus!): Order!
+  refundOrder(orderId: Int!): Order!
   payoutVendor(vendorId: Int!, amount: Int!): Transaction!
   setVendorCommission(vendorId: Int!, commissionRate: Float!): Vendor!
   approveVendor(vendorId: Int!): Vendor!

@@ -45,6 +45,9 @@
   "NOT_FOUND_ORDER": "الطلب غير موجود",
   "ORDER_FINAL": "هذا الطلب {status} بالفعل ولا يمكن تغييره",
   "INVALID_ORDER_TRANSITION": "لا يمكن نقل الطلب من {from} إلى {to}",
+  "ORDER_ALREADY_REFUNDED": "تم استرداد مبلغ هذا الطلب بالفعل",
+  "REFUND_ORDER_NOT_PAID": "لا يمكن استرداد إلا الطلب المدفوع",
+  "REFUND_FAILED": "تعذر إتمام الاسترداد ولم يتم تغيير أي شيء، يرجى المحاولة مرة أخرى",
   "ORDER_NOT_PAID": "لا يمكن تجهيز الطلب قبل نجاح الدفع",
   "ORDER_ALREADY_CHANGED": "تم تغيير هذا الطلب للتو من شخص آخر، يرجى التحديث",
   "ITEM_UNAVAILABLE": "{name} لم يعد متاحاً"

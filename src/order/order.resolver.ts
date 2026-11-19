@@ -85,13 +85,19 @@ export class OrderResolver {
 		return this.orderService.updateStatus(orderId, status, user.id, vendor?.id);
 	}
 
+	@Roles(UserRole.SuperAdmin)
+	@Mutation(() => Order)
+	refundOrder(@Args('orderId', { type: () => Int }) orderId: number, @CurrentUser() admin: User) {
+		return this.orderService.refundOrder(orderId, admin.id);
+	}
+
 	@ResolveField(() => [OrderItem])
 	items(@Parent() order: Order) {
 		return this.itemLoader.byOrderId.load(order.id);
 	}
 	@ResolveField(() => PaymentStatus) 
 	paymentStatus(@Parent() order: Order) {
-		return order.checkout.status;
+		return order.stripeRefundId ? PaymentStatus.Refunded : order.checkout.status;
 	}
 	@ResolveField(() => String)
 	shippingAddress(@Parent() order: Order) {

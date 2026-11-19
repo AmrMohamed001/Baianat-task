@@ -45,6 +45,9 @@
   "NOT_FOUND_ORDER": "Order not found",
   "ORDER_FINAL": "This order is already {status} and can't be changed",
   "INVALID_ORDER_TRANSITION": "An order can't move from {from} to {to}",
+  "ORDER_ALREADY_REFUNDED": "This order was already refunded",
+  "REFUND_ORDER_NOT_PAID": "Only a paid order can be refunded",
+  "REFUND_FAILED": "The refund could not be completed, nothing was changed, please try again",
   "ORDER_NOT_PAID": "The order can't be processed before the payment succeeds",
   "ORDER_ALREADY_CHANGED": "This order was just changed by someone else, please refresh",
   "ITEM_UNAVAILABLE": "{name} is no longer available"

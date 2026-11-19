@@ -41,6 +41,9 @@ export class Order {
 	@Field(() => OrderStatus)
 	status: OrderStatus;
 
+	@Column({ type: 'varchar', length: 255, nullable: true })
+	stripeRefundId: string | null;
+
 	@OneToMany(() => OrderItem, (item) => item.order)
 	@Field(() => [OrderItem])
 	items: OrderItem[];
