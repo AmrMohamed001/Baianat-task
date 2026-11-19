@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { I18nService } from 'nestjs-i18n';
-import { EntityManager, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { Wallet } from './wallet.entity';
 import { Transaction } from './transaction.entity';
 import { TransactionType } from './enums/transaction-type.enum';
@@ -9,12 +9,14 @@ import { PaginationArgs } from '../common/query/types/pagination.args';
 import { paginate } from '../common/query/paginate';
 import { TransactionsArgs } from './dtos/transactions.args';
 import { Vendor } from '../vendor/vendor.entity';
+import { VendorStatus } from '../vendor/enums/vendor-status.enum';
 
 @Injectable()
 export class WalletService {
   constructor(
     @InjectRepository(Wallet) private readonly walletRepo: Repository<Wallet>,
     @InjectRepository(Transaction) private readonly transactionRepo: Repository<Transaction>,
+    private readonly dataSource: DataSource,
     private readonly i18n: I18nService,
   ) {}
 
@@ -59,8 +61,18 @@ export class WalletService {
     return paginate(qb, args);
   }
 
+  payoutVendor(vendorId: number, amount: number, adminId: number) {
+    return this.dataSource.transaction(async (manager) => {
+      const vendor = await manager.findOneBy(Vendor, { id: vendorId });
+      if (!vendor) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_VENDOR'));
+      if (vendor.status !== VendorStatus.Verified) throw new BadRequestException(this.i18n.t('exceptions.VENDOR_NOT_APPROVED'));
+
+      return this.applyTransaction(manager, vendor.ownerId, TransactionType.Payout, amount, { createdBy: adminId });
+    });
+  }
+
     // wallet trans + transs creation
-  async applyTransaction(manager: EntityManager, userId: number, type: TransactionType, amount: number, link: { orderId?: number; paymentIntentId?: string } = {}) {
+  async applyTransaction(manager: EntityManager, userId: number, type: TransactionType, amount: number, link: { orderId?: number; paymentIntentId?: string; createdBy?: number } = {}) {
     const wallet = await manager.findOne(Wallet, { where: { userId }, lock: { mode: 'pessimistic_write' } });
     if (!wallet) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_WALLET'));
 
@@ -68,6 +80,6 @@ export class WalletService {
     if (wallet.balance + signed < 0) throw new BadRequestException(this.i18n.t('exceptions.INSUFFICIENT_BALANCE'));
 
     await manager.update(Wallet, wallet.id, { balance: wallet.balance + signed });
-    return manager.save(manager.create(Transaction, { walletId: wallet.id, type, amount: signed, orderId: link.orderId ?? null, paymentIntentId: link.paymentIntentId ?? null }));
+    return manager.save(manager.create(Transaction, { walletId: wallet.id, type, amount: signed, orderId: link.orderId ?? null, paymentIntentId: link.paymentIntentId ?? null, createdBy: link.createdBy ?? null }));
   }
 }
