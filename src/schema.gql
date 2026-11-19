@@ -117,6 +117,7 @@ type Transaction {
   type: TransactionType!
   amount: Int!
   orderId: Int
+  createdBy: Int
   paymentIntentId: String
   createdAt: DateTime!
 }
@@ -322,6 +323,7 @@ type Mutation {
   checkout(shippingAddress: String!): CheckoutResult!
   cancelOrder(orderId: Int!): Order!
   updateOrderStatus(orderId: Int!, status: OrderStatus!): Order!
+  payoutVendor(vendorId: Int!, amount: Int!): Transaction!
   setVendorCommission(vendorId: Int!, commissionRate: Float!): Vendor!
   approveVendor(vendorId: Int!): Vendor!
   rejectVendor(vendorId: Int!, input: RejectVendorInput): Vendor!

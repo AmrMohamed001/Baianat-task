@@ -2,6 +2,7 @@ import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, Primary
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { Wallet } from './wallet.entity';
 import { Order } from '../order/entities/order.entity';
+import { User } from '../user/user.entity';
 import { TransactionType } from './enums/transaction-type.enum';
 
 @Index(['walletId'])
@@ -36,6 +37,14 @@ export class Transaction {
 	@ManyToOne(() => Order, { onDelete: 'SET NULL', nullable: true })
 	@JoinColumn({ name: 'orderId' })
 	order: Order | null;
+
+	@Column({ type: 'int', nullable: true })
+	@Field(() => Int, { nullable: true})
+	createdBy: number | null;
+
+	@ManyToOne(() => User, { onDelete: 'SET NULL', nullable: true })
+	@JoinColumn({ name: 'createdBy' })
+	creator: User | null;
 
 	@Column({ type: 'varchar', length: 255, nullable: true })
 	@Field(() => String, { nullable: true})

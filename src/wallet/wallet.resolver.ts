@@ -1,10 +1,12 @@
-import { Args, Int, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import { Args, Int, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { WalletService } from './wallet.service';
 import { Wallet } from './wallet.entity';
 import { PaginatedTransactions } from './dtos/paginated-transactions.type';
 import { VerifiedVendor } from '../vendor/decorators/verified-vendor.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { PayoutVendorArgs } from './dtos/payout-vendor.args';
+import { Transaction } from './transaction.entity';
 import { TransactionsArgs } from './dtos/transactions.args';
 import { PaginationArgs } from '../common/query/types/pagination.args';
 import { UserRole } from '../user/enums/user-role.enum';
@@ -30,6 +32,12 @@ export class WalletResolver {
 	@Query(() => PaginatedTransactions)
 	allTransactions(@Args() args: TransactionsArgs) {
 		return this.walletService.allTransactions(args);
+	}
+
+	@Roles(UserRole.SuperAdmin)
+	@Mutation(() => Transaction)
+	payoutVendor(@Args() args: PayoutVendorArgs, @CurrentUser() admin: User) {
+		return this.walletService.payoutVendor(args.vendorId, args.amount, admin.id);
 	}
 
 	@ResolveField(() => PaginatedTransactions)
