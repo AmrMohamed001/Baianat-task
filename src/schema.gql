@@ -176,6 +176,7 @@ type PublicVendor {
   storeName: String!
   description: String
   products: [Product!]!
+  reviews: [Review!]!
 }
 
 type PaginatedPublicVendors {
@@ -191,6 +192,17 @@ type OrderStatusHistory {
   status: OrderStatus!
   changedBy: Int
   createdAt: DateTime!
+}
+
+type Review {
+  id: Int!
+  vendorId: Int!
+  rating: Int!
+  comment: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  client: ReviewClient
+  vendor: PublicVendor
 }
 
 type CheckoutResult {
@@ -247,6 +259,20 @@ type PaginatedFollowers {
   totalPages: Int!
 }
 
+type PaginatedReviews {
+  data: [Review!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+}
+
+type ReviewClient {
+  id: Int!
+  fullname: String!
+  image: String
+}
+
 type Query {
   hello: String!
   me: User!
@@ -290,6 +316,7 @@ type Query {
   myStore: Vendor!
   myFollowings(page: Int! = 1, limit: Int! = 20): PaginatedPublicVendors!
   myFollowers(page: Int! = 1, limit: Int! = 20): PaginatedFollowers!
+  vendorReviews(page: Int! = 1, limit: Int! = 20, vendorId: Int!): PaginatedReviews!
   categories: [Category!]!
 }
 
@@ -332,6 +359,9 @@ type Mutation {
   rejectVendor(vendorId: Int!, input: RejectVendorInput): Vendor!
   followVendor(vendorId: Int!): PublicVendor!
   unfollowVendor(vendorId: Int!): PublicVendor!
+  createReview(vendorId: Int!, rating: Int!, comment: String): Review!
+  updateReview(reviewId: Int!, rating: Int, comment: String): Review!
+  deleteReview(reviewId: Int!): Boolean!
   createCategory(input: CreateCategoryInput!): Category!
   updateCategory(id: Int!, input: UpdateCategoryInput!): Category!
   deleteCategory(id: Int!): Boolean!
