@@ -92,7 +92,7 @@ export class OrderService {
 			for (const [vendorId, group] of byVendor) {
 				const { commissionRate, total, items } = group;
 				
-				const od = manager.create(Order, { checkoutId: checkout.id, vendorId, total, commissionAmount: Math.round((total * commissionRate) / 100) })
+				const od = manager.create(Order, { checkoutId: checkout.id, clientId: checkout.clientId, vendorId, total, commissionAmount: Math.round((total * commissionRate) / 100) })
 				const order = await manager.save(od);
 				await manager.save(manager.create(OrderStatusHistory, { orderId: order.id, status: OrderStatus.Pending, changedBy: userId }));
 				await manager.save(
@@ -123,8 +123,8 @@ export class OrderService {
 	myOrders(args: MyOrdersArgs, clientId: number) {
 		const qb = this.orderRepo
 			.createQueryBuilder('order')
-			.innerJoinAndSelect('order.checkout', 'checkout')
-			.where('checkout.clientId = :clientId', { clientId })
+			.innerJoinAndSelect('order.checkout', 'checkout') // for shippingAddress
+			.where('order.clientId = :clientId', { clientId })
 			.orderBy('order.createdAt', 'DESC')
 			.addOrderBy('order.id', 'DESC');
 		if (args.status) qb.andWhere('order.status = :status', { status: args.status });
@@ -135,7 +135,7 @@ export class OrderService {
 		const qb = this.orderRepo
 			.createQueryBuilder('order')
 			.innerJoinAndSelect('order.checkout', 'checkout')
-			.innerJoin('checkout.client', 'client')
+			.innerJoin('order.client', 'client')
 			.addSelect(['client.id', 'client.fullname'])
 			.where('order.vendorId = :vendorId', { vendorId })
 			.orderBy('order.createdAt', 'DESC')
@@ -151,27 +151,27 @@ export class OrderService {
 		const qb = this.orderRepo
 			.createQueryBuilder('order')
 			.innerJoinAndSelect('order.checkout', 'checkout')
-			.innerJoin('checkout.client', 'client')
+			.innerJoin('order.client', 'client')
 			.addSelect(['client.id', 'client.fullname'])
 			.orderBy('order.createdAt', 'DESC')
 			.addOrderBy('order.id', 'DESC');
 		if (status) qb.andWhere('order.status = :status', { status });
 		if (paymentStatus) qb.andWhere('order.paymentStatus = :paymentStatus', { paymentStatus });
 		if (vendorId) qb.andWhere('order.vendorId = :vendorId', { vendorId });
-		if (clientId) qb.andWhere('checkout.clientId = :clientId', { clientId });
+		if (clientId) qb.andWhere('order.clientId = :clientId', { clientId });
 		if (from) qb.andWhere('order.createdAt >= :from', { from });
 		if (to) qb.andWhere('order.createdAt <= :to', { to });
 		return paginate(qb, args);
 	}
 
 	async findOne(id: number, clientId: number) {
-		const order = await this.orderRepo.findOne({ where: { id, checkout: { clientId } }, relations: { checkout: true } });
+		const order = await this.orderRepo.findOne({ where: { id, clientId }, relations: { checkout: true } });
 		if (!order) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_ORDER'));
 		return order;
 	}
 
 	async updateStatus(orderId: number, status: OrderStatus, actorId: number, vendorId?: number) {
-		const order = await this.orderRepo.findOne({ where: { id: orderId }, relations: { checkout: true, items: true, vendor: true } });
+		const order = await this.orderRepo.findOne({ where: { id: orderId }, relations: { items: true, vendor: true } });
 		if (!order) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_ORDER'));
 		if (vendorId !== undefined && order.vendorId !== vendorId) throw new ForbiddenException(this.i18n.t('exceptions.NOT_OWNER'));
 
@@ -185,7 +185,7 @@ export class OrderService {
 	}
 
 	async cancelOrder(orderId: number, clientId: number) {
-		const order = await this.orderRepo.findOne({ where: { id: orderId, checkout: { clientId } }, relations: { checkout: true, items: true, vendor: true } }); // someone else's order = not found
+		const order = await this.orderRepo.findOne({ where: { id: orderId, clientId }, relations: { items: true, vendor: true } }); // someone else's order = not found
 		if (!order) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_ORDER'));
 
 		if (order.status === OrderStatus.Cancelled) return order; // already cancelled
@@ -196,7 +196,7 @@ export class OrderService {
 
 	// call refund + send notification (either cancel order or just refund it if canceled)
 	async refundOrder(orderId: number, adminId: number) {
-		const order = await this.orderRepo.findOne({ where: { id: orderId }, relations: { checkout: true, items: true, vendor: true } });
+		const order = await this.orderRepo.findOne({ where: { id: orderId }, relations: { items: true, vendor: true } });
 		if (!order) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_ORDER'));
 		if (order.paymentStatus === PaymentStatus.Refunded) throw new BadRequestException(this.i18n.t('exceptions.ORDER_ALREADY_REFUNDED'));
 		if (order.paymentStatus !== PaymentStatus.Paid) throw new BadRequestException(this.i18n.t('exceptions.REFUND_ORDER_NOT_PAID'));
@@ -211,11 +211,11 @@ export class OrderService {
 
 		// then send mail
 		// sending for the client and the owner of the product
-		this.notifications.send('order-refunded', { orderId: order.id, userId: order.checkout.clientId });
+		this.notifications.send('order-refunded', { orderId: order.id, userId: order.clientId });
 		this.notifications.send('order-refunded', { orderId: order.id, userId: order.vendor.ownerId });
 
 
-		return this.orderRepo.findOneOrFail({ where: { id: order.id }, relations: { checkout: { client: true } } });
+		return this.orderRepo.findOneOrFail({ where: { id: order.id }, relations: { checkout: true, client: true } });
 	}
 
 	// handle wallets - call refund - save refundid
@@ -224,7 +224,8 @@ export class OrderService {
 		if (locked.paymentStatus === PaymentStatus.Refunded) throw new BadRequestException(this.i18n.t('exceptions.ORDER_ALREADY_REFUNDED'));
 
 		const vendor = await manager.findOneByOrFail(Vendor, { id: order.vendorId });
-		const meta = { orderId: order.id, paymentIntentId: order.checkout.paymentIntentId!, createdBy: actorId };
+		const checkout = await manager.findOneByOrFail(Checkout, { id: order.checkoutId });
+		const meta = { orderId: order.id, paymentIntentId: checkout.paymentIntentId!, createdBy: actorId };
 
 		// money vendor + transaction
 		const vendorShare = order.total - order.commissionAmount;
@@ -268,8 +269,8 @@ export class OrderService {
 		});
 
 		// notify the owner of product and the client
-		this.notifications.send('order-status-changed', { orderId: order.id, userId: order.checkout.clientId, from: order.status, to: status, at: new Date().toUTCString() });
+		this.notifications.send('order-status-changed', { orderId: order.id, userId: order.clientId, from: order.status, to: status, at: new Date().toUTCString() });
 		this.notifications.send('order-status-changed', { orderId: order.id, userId: order.vendor.ownerId, from: order.status, to: status, at: new Date().toUTCString() });
-		return this.orderRepo.findOneOrFail({ where: { id: order.id }, relations: { checkout: { client: true } } });
+		return this.orderRepo.findOneOrFail({ where: { id: order.id }, relations: { checkout: true, client: true } });
 	}
 }

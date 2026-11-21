@@ -3,10 +3,12 @@ import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { Checkout } from './checkout.entity';
 import { OrderItem } from './order-item.entity';
 import { Vendor } from '../../vendor/vendor.entity';
+import { User } from '../../user/user.entity';
 import { OrderStatus } from '../enums/order-status.enum';
 import { PaymentStatus } from '../enums/payment-status.enum';
 
 @Index(['checkoutId'])
+@Index(['clientId'])
 @Index(['vendorId'])
 @Entity('sys_orders')
 @ObjectType()
@@ -21,6 +23,13 @@ export class Order {
 	@ManyToOne(() => Checkout, (checkout) => checkout.orders, { onDelete: 'CASCADE' })
 	@JoinColumn({ name: 'checkoutId' })
 	checkout: Checkout;
+
+	@Column()
+	clientId: number;
+
+	@ManyToOne(() => User, { onDelete: 'CASCADE' })
+	@JoinColumn({ name: 'clientId' })
+	client: User;
 
 	@Column()
 	@Field(() => Int)

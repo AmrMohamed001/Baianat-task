@@ -101,7 +101,7 @@ export class OrderResolver {
 
 	@ResolveField(() => String, { nullable: true, description: 'only filled in the vendor views' })
 	clientName(@Parent() order: Order) {
-		return order.checkout?.client?.fullname ?? null;
+		return order.client?.fullname ?? null;
 	}
 
 	@ResolveField(() => [OrderStatusHistory])
