@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import { NotificationService } from '../notification/notification.service';
 import { DataSource, EntityManager, In } from 'typeorm';
 import Stripe from 'stripe';
 import { StripeEvent } from './entities/stripe-event.entity';
@@ -19,7 +18,7 @@ import { TransactionType } from '../wallet/enums/transaction-type.enum';
 @Injectable()
 export class StripeWebhookService {
 	constructor(
-		@InjectQueue('mail') private readonly mailQueue: Queue,
+		private readonly notifications: NotificationService,
 		private readonly dataSource: DataSource,
 		private readonly walletService: WalletService,
 		private readonly config: ConfigService,
@@ -41,7 +40,7 @@ export class StripeWebhookService {
 			}
 		});
 
-		if (job) this.mailQueue.add(job.name, job.data).catch((e) => this.logger.error(e.message, e.stack));
+		if (job) this.notifications.send(job.name, job.data);
 	}
 	// errors enforce retry solve with log
 	private async paymentSucceeded(manager: EntityManager, intent: Stripe.PaymentIntent) {
@@ -66,7 +65,7 @@ export class StripeWebhookService {
 			await this.walletService.applyTransaction(manager, order.vendor.ownerId, TransactionType.Sale, order.total - order.commissionAmount, { orderId: order.id, paymentIntentId: intent.id });
 			await this.walletService.applyTransaction(manager, adminId, TransactionType.Sale, order.commissionAmount, { orderId: order.id, paymentIntentId: intent.id });
 		}
-		return { name: 'payment-succeeded', data: { checkoutId: checkout.id, clientId: checkout.clientId } };
+		return { name: 'payment-succeeded', data: { checkoutId: checkout.id, userId: checkout.clientId } };
 	}
 
 	private async paymentFailed(manager: EntityManager, intent: Stripe.PaymentIntent) {
@@ -97,6 +96,6 @@ export class StripeWebhookService {
 			}
 		}
 
-		return { name: 'payment-failed', data: { checkoutId: checkout.id, clientId: checkout.clientId } };
+		return { name: 'payment-failed', data: { checkoutId: checkout.id, userId: checkout.clientId } };
 	}
 }

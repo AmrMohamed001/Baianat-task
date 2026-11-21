@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { BullModule } from '@nestjs/bullmq';
+import { NotificationModule } from '../notification/notification.module';
 import { Vendor } from './vendor.entity';
 import { VendorService } from './vendor.service';
 import { VendorResolver } from './vendor.resolver';
@@ -8,7 +8,7 @@ import { PublicVendorResolver } from './public-vendor.resolver';
 import { DataloaderModule } from '../dataloader/dataloader.module';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([Vendor]), BullModule.registerQueue({ name: 'mail' }), DataloaderModule],
+	imports: [TypeOrmModule.forFeature([Vendor]), NotificationModule, DataloaderModule],
 	providers: [VendorService, VendorResolver, PublicVendorResolver],
 	exports: [VendorService],
 })

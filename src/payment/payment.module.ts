@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { BullModule } from '@nestjs/bullmq';
+import { NotificationModule } from '../notification/notification.module';
 import { PaymentService } from './payment.service';
 import { StripeWebhookService } from './webhook.service';
 import { StripeWebhookController } from './webhook.controller';
@@ -9,7 +9,7 @@ import { Checkout } from '../order/entities/checkout.entity';
 import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([StripeEvent, Checkout]), BullModule.registerQueue({ name: 'mail' }), WalletModule],
+	imports: [TypeOrmModule.forFeature([StripeEvent, Checkout]), NotificationModule, WalletModule],
 	controllers: [StripeWebhookController],
 	providers: [PaymentService, StripeWebhookService],
 	exports: [PaymentService],

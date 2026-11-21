@@ -1,7 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import { NotificationService } from '../notification/notification.service';
 import { I18nContext, I18nService } from 'nestjs-i18n';
 import { ConfigService } from '@nestjs/config';
 import { DataSource, EntityManager, In, Repository } from 'typeorm';
@@ -30,7 +29,7 @@ export class OrderService {
 	private platform_user_id:number
 	constructor(
 		@InjectRepository(Order) private readonly orderRepo: Repository<Order>,
-		@InjectQueue('mail') private readonly mailQueue: Queue,
+		private readonly notifications: NotificationService,
 		private readonly cartService: CartService,
 		private readonly paymentService: PaymentService,
 		private readonly walletService: WalletService,
@@ -172,7 +171,7 @@ export class OrderService {
 	}
 
 	async updateStatus(orderId: number, status: OrderStatus, actorId: number, vendorId?: number) {
-		const order = await this.orderRepo.findOne({ where: { id: orderId }, relations: { checkout: true, items: true } });
+		const order = await this.orderRepo.findOne({ where: { id: orderId }, relations: { checkout: true, items: true, vendor: true } });
 		if (!order) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_ORDER'));
 		if (vendorId !== undefined && order.vendorId !== vendorId) throw new ForbiddenException(this.i18n.t('exceptions.NOT_OWNER'));
 
@@ -186,7 +185,7 @@ export class OrderService {
 	}
 
 	async cancelOrder(orderId: number, clientId: number) {
-		const order = await this.orderRepo.findOne({ where: { id: orderId, checkout: { clientId } }, relations: { checkout: true, items: true } }); // someone else's order = not found
+		const order = await this.orderRepo.findOne({ where: { id: orderId, checkout: { clientId } }, relations: { checkout: true, items: true, vendor: true } }); // someone else's order = not found
 		if (!order) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_ORDER'));
 
 		if (order.status === OrderStatus.Cancelled) return order; // already cancelled
@@ -197,7 +196,7 @@ export class OrderService {
 
 	// call refund + send notification (either cancel order or just refund it if canceled)
 	async refundOrder(orderId: number, adminId: number) {
-		const order = await this.orderRepo.findOne({ where: { id: orderId }, relations: { checkout: true, items: true } });
+		const order = await this.orderRepo.findOne({ where: { id: orderId }, relations: { checkout: true, items: true, vendor: true } });
 		if (!order) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_ORDER'));
 		if (order.paymentStatus === PaymentStatus.Refunded) throw new BadRequestException(this.i18n.t('exceptions.ORDER_ALREADY_REFUNDED'));
 		if (order.paymentStatus !== PaymentStatus.Paid) throw new BadRequestException(this.i18n.t('exceptions.REFUND_ORDER_NOT_PAID'));
@@ -211,9 +210,9 @@ export class OrderService {
 		await this.dataSource.transaction((manager) => this.refund(manager, order, adminId));
 
 		// then send mail
-		this.mailQueue
-			.add('order-refunded', { orderId: order.id, clientId: order.checkout.clientId, vendorId: order.vendorId, amount: order.total })
-			.catch((e) => this.logger.error(e.message, e.stack));
+		// sending for the client and the owner of the product
+		this.notifications.send('order-refunded', { orderId: order.id, userId: order.checkout.clientId });
+		this.notifications.send('order-refunded', { orderId: order.id, userId: order.vendor.ownerId });
 
 
 		return this.orderRepo.findOneOrFail({ where: { id: order.id }, relations: { checkout: { client: true } } });
@@ -268,9 +267,9 @@ export class OrderService {
 			}
 		});
 
-		this.mailQueue
-			.add('order-status-changed', { orderId: order.id, clientId: order.checkout.clientId, vendorId: order.vendorId, from: order.status, to: status, actorId })
-			.catch((e) => this.logger.error(e.message, e.stack));
+		// notify the owner of product and the client
+		this.notifications.send('order-status-changed', { orderId: order.id, userId: order.checkout.clientId, from: order.status, to: status });
+		this.notifications.send('order-status-changed', { orderId: order.id, userId: order.vendor.ownerId, from: order.status, to: status });
 		return this.orderRepo.findOneOrFail({ where: { id: order.id }, relations: { checkout: { client: true } } });
 	}
 }
