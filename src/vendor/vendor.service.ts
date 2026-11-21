@@ -1,13 +1,12 @@
 import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
 import { I18nService } from 'nestjs-i18n';
 import { EntityManager, Repository } from 'typeorm';
 import { Vendor } from './vendor.entity';
 import { VendorStatus } from './enums/vendor-status.enum';
 import { VendorsArgs } from './dtos/vendors.args';
+import { NotificationService } from '../notification/notification.service';
 import { paginate } from '../common/query/paginate';
 
 export interface CreateVendorData {
@@ -19,7 +18,7 @@ export interface CreateVendorData {
 export class VendorService {
   constructor(
     @InjectRepository(Vendor) private readonly vendorRepo: Repository<Vendor>,
-    @InjectQueue('mail') private readonly mailQueue: Queue,
+    private readonly notifications: NotificationService,
     private readonly config: ConfigService,
     private readonly i18n: I18nService,
     private readonly logger: Logger,
@@ -72,8 +71,7 @@ export class VendorService {
     const res = await this.vendorRepo.update({ id: vendorId, status: vendor.status }, changes); // race guard instead of transacs
     if (!res.affected) throw new ConflictException(this.i18n.t('exceptions.VENDOR_ALREADY_DECIDED'));
 
-    this.mailQueue.add('vendor-approved', { vendorId, ownerId: vendor.ownerId })
-      .catch((e) => this.logger.error(e.message, e.stack));
+    this.notifications.send('vendor-approved', { vendorId, userId: vendor.ownerId });
     return Object.assign(vendor, changes);
   }
 
@@ -89,8 +87,7 @@ export class VendorService {
     const res = await this.vendorRepo.update({ id: vendorId, status: vendor.status }, changes);
     if (!res.affected) throw new ConflictException(this.i18n.t('exceptions.VENDOR_ALREADY_DECIDED'));
 
-    this.mailQueue.add('vendor-rejected', { vendorId, ownerId: vendor.ownerId, reason: changes.rejectionReason })
-      .catch((e) => this.logger.error(e.message, e.stack));
+    this.notifications.send('vendor-rejected', { vendorId, userId: vendor.ownerId });
     return Object.assign(vendor, changes);
   }
 }

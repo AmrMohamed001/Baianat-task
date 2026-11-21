@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { BullModule } from '@nestjs/bullmq';
+import { NotificationModule } from '../notification/notification.module';
 import { Checkout } from './entities/checkout.entity';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
@@ -15,7 +15,7 @@ import { DataloaderModule } from '../dataloader/dataloader.module';
 @Module({
 	imports: [
 		TypeOrmModule.forFeature([Checkout, Order, OrderItem, OrderStatusHistory]),
-		BullModule.registerQueue({ name: 'mail' }),
+		NotificationModule,
 		CartModule,
 		PaymentModule,
 		WalletModule,
