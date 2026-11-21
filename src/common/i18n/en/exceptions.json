@@ -50,5 +50,8 @@
   "REFUND_FAILED": "The refund could not be completed, nothing was changed, please try again",
   "ORDER_NOT_PAID": "The order can't be processed before the payment succeeds",
   "ORDER_ALREADY_CHANGED": "This order was just changed by someone else, please refresh",
-  "ITEM_UNAVAILABLE": "{name} is no longer available"
+  "ITEM_UNAVAILABLE": "{name} is no longer available",
+  "NOT_FOUND_REVIEW": "Review not found",
+  "REVIEW_NOT_PURCHASED": "You can review a vendor only after one of your orders from them is delivered",
+  "REVIEW_ALREADY_EXISTS": "You already reviewed this vendor, update your existing review instead"
 }

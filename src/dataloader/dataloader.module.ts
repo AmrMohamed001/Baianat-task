@@ -13,10 +13,14 @@ import { OrderStatusHistory } from '../order/entities/order-status-history.entit
 import { OrderHistoryLoader } from './order-history.loader';
 import { OrderItem } from '../order/entities/order-item.entity';
 import { OrderItemLoader } from './order-item.loader';
+import { Review } from '../review/review.entity';
+import { ReviewLoader } from './review.loader';
+import { User } from '../user/user.entity';
+import { UserLoader } from './user.loader';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([Product, Vendor, Category, CartItem, VendorFollow, OrderStatusHistory, OrderItem])],
-	providers: [ProductLoader, VendorLoader, CategoryLoader, CartItemLoader, OrderHistoryLoader, OrderItemLoader],
-	exports: [ProductLoader, VendorLoader, CategoryLoader, CartItemLoader, OrderHistoryLoader, OrderItemLoader],
+	imports: [TypeOrmModule.forFeature([Product, Vendor, Category, CartItem, VendorFollow, OrderStatusHistory, OrderItem, Review, User])],
+	providers: [ProductLoader, VendorLoader, CategoryLoader, CartItemLoader, OrderHistoryLoader, OrderItemLoader, ReviewLoader, UserLoader],
+	exports: [ProductLoader, VendorLoader, CategoryLoader, CartItemLoader, OrderHistoryLoader, OrderItemLoader, ReviewLoader, UserLoader],
 })
 export class DataloaderModule {}
