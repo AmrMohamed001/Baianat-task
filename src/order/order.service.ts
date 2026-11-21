@@ -268,8 +268,8 @@ export class OrderService {
 		});
 
 		// notify the owner of product and the client
-		this.notifications.send('order-status-changed', { orderId: order.id, userId: order.checkout.clientId, from: order.status, to: status });
-		this.notifications.send('order-status-changed', { orderId: order.id, userId: order.vendor.ownerId, from: order.status, to: status });
+		this.notifications.send('order-status-changed', { orderId: order.id, userId: order.checkout.clientId, from: order.status, to: status, at: new Date().toUTCString() });
+		this.notifications.send('order-status-changed', { orderId: order.id, userId: order.vendor.ownerId, from: order.status, to: status, at: new Date().toUTCString() });
 		return this.orderRepo.findOneOrFail({ where: { id: order.id }, relations: { checkout: { client: true } } });
 	}
 }

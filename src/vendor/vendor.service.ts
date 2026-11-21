@@ -71,7 +71,7 @@ export class VendorService {
     const res = await this.vendorRepo.update({ id: vendorId, status: vendor.status }, changes); // race guard instead of transacs
     if (!res.affected) throw new ConflictException(this.i18n.t('exceptions.VENDOR_ALREADY_DECIDED'));
 
-    this.notifications.send('vendor-approved', { vendorId, userId: vendor.ownerId });
+    this.notifications.send('vendor-approved', { storeName: vendor.storeName, userId: vendor.ownerId });
     return Object.assign(vendor, changes);
   }
 
@@ -87,7 +87,7 @@ export class VendorService {
     const res = await this.vendorRepo.update({ id: vendorId, status: vendor.status }, changes);
     if (!res.affected) throw new ConflictException(this.i18n.t('exceptions.VENDOR_ALREADY_DECIDED'));
 
-    this.notifications.send('vendor-rejected', { vendorId, userId: vendor.ownerId });
+    this.notifications.send('vendor-rejected', { storeName: vendor.storeName, userId: vendor.ownerId });
     return Object.assign(vendor, changes);
   }
 }
