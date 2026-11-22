@@ -39,9 +39,8 @@ export class User {
 	@Column({ type: 'timestamptz', nullable: true })
 	changePasswordAt: Date | null;
 
-	@Column({ nullable: true })
-	@Field({ nullable: true })
-	image: string;
+	@Column({ type: 'varchar', nullable: true })
+	photoKey: string | null;
 
 	@Column({ type: 'enum', enum: UserRole, default: UserRole.Client })
 	@Field(() => UserRole)

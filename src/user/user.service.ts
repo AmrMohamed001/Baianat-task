@@ -2,6 +2,7 @@ import {
 	BadRequestException,
 	ConflictException,
 	Injectable,
+	Logger,
 	NotFoundException,
 } from '@nestjs/common';
 import { DataSource, EntityManager, Not, Repository } from 'typeorm';
@@ -17,12 +18,17 @@ import * as bcrypt from 'bcryptjs';
 import { I18nService } from 'nestjs-i18n';
 import { UsersArgs } from './dtos/users.args';
 import { paginate } from '../common/query/paginate';
+import { StorageService } from '../storage/storage.service';
+import { uploadProfiles } from '../storage/upload-profiles';
+import { ImageContentType } from '../storage/enums/image-content-type.enum';
 
 @Injectable()
 export class UserService {
 	constructor(
 		@InjectRepository(User) private userRepo: Repository<User>,
 		private readonly dataSource: DataSource,
+		private readonly storage: StorageService,
+		private readonly logger: Logger,
 		private readonly i18n: I18nService
 	) {}
 
@@ -63,6 +69,31 @@ export class UserService {
 
 	getProfile(userId: number) {
 		return this.findById(userId);
+	}
+	//#endregion
+
+	//#region Photo
+	createPhotoUpload(userId: number, contentType: ImageContentType) {
+		return this.storage.createPresignedUpload(uploadProfiles.userPhoto, userId, contentType);
+	}
+
+	async setPhoto(userId: number, key: string) {
+		await this.storage.verifyUpload(uploadProfiles.userPhoto, userId, key);
+		const user = await this.findById(userId);
+		const oldKey = user.photoKey;
+		if (oldKey) this.storage.deleteObject(oldKey).catch((e) => this.logger.error(e.message, e.stack));
+		await this.userRepo.update(userId, { photoKey: key });
+		user.photoKey = key;
+		return user;
+	}
+
+	async removePhoto(userId: number) {
+		const user = await this.findById(userId);
+		const oldKey = user.photoKey;
+		if (oldKey) this.storage.deleteObject(oldKey).catch((e) => this.logger.error(e.message, e.stack));
+		await this.userRepo.update(userId, { photoKey: null });
+		user.photoKey = null;
+		return user;
 	}
 	//#endregion
 

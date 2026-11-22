@@ -54,6 +54,7 @@ type Product {
   inStock: Boolean!
   name: String!
   description: String
+  images: [ProductImage!]!
   vendor: PublicVendor!
   category: Category
 }
@@ -144,12 +145,12 @@ type User {
   username: String!
   fullname: String!
   email: String!
-  image: String
   role: UserRole!
   isActive: Boolean!
   phone: String
   createdAt: DateTime
   updatedAt: DateTime
+  photoUrl: String
 }
 
 enum UserRole {
@@ -164,6 +165,24 @@ type PaginatedUsers {
   page: Int!
   limit: Int!
   totalPages: Int!
+}
+
+type PresignedUpload {
+  url: String!
+  fields: JSON!
+  key: String!
+  expiresAt: DateTime!
+}
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+type ProductImage {
+  id: Int!
+  createdAt: DateTime!
+  url: String!
 }
 
 type PaginatedProducts {
@@ -276,7 +295,7 @@ type PaginatedReviews {
 type ReviewClient {
   id: Int!
   fullname: String!
-  image: String
+  photoUrl: String
 }
 
 type Query {
@@ -337,6 +356,9 @@ enum SortOrder {
 }
 
 type Mutation {
+  createProfilePhotoUpload(contentType: ImageContentType!): PresignedUpload!
+  setProfilePhoto(key: String!): User!
+  removeProfilePhoto: User!
   updateMyClientProfile(input: UpdateClientDto!): Boolean!
   updateMyVendorProfile(input: UpdateVendorDto!): Boolean!
   setUserActive(userId: Int!, isActive: Boolean!): User!
@@ -355,6 +377,9 @@ type Mutation {
   createProduct(input: CreateProductInput!): Product!
   updateProduct(id: Int!, input: UpdateProductInput!): Product!
   deleteProduct(id: Int!): Boolean!
+  createProductImageUpload(productId: Int!, contentType: ImageContentType!): PresignedUpload!
+  addProductImages(productId: Int!, keys: [String!]!): Product!
+  removeProductImage(productId: Int!, imageId: Int!): Product!
   checkout(shippingAddress: String!): CheckoutResult!
   cancelOrder(orderId: Int!): Order!
   updateOrderStatus(orderId: Int!, status: OrderStatus!): Order!
@@ -374,6 +399,12 @@ type Mutation {
   registerClient(input: RegisterClientInput!): String!
   registerVendor(input: RegisterVendorInput!): String!
   login(input: LoginInput!): AuthPayload!
+}
+
+enum ImageContentType {
+  JPEG
+  PNG
+  WEBP
 }
 
 input UpdateClientDto {
