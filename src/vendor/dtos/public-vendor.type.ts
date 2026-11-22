@@ -1,4 +1,4 @@
-import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
 import { Paginated } from '../../common/query/types/paginated.type';
 
 @ObjectType()
@@ -11,6 +11,15 @@ export class PublicVendor {
 
 	@Field(() => String, { nullable: true })
 	description: string | null;
+
+	@Field(() => Float)
+	averageRating: number | null;
+
+	@Field(() => Int)
+	reviewsCount: number;
+
+	@Field(() => Int)
+	followersCount: number;
 }
 
 @ObjectType() export class PaginatedPublicVendors extends Paginated(PublicVendor) {}

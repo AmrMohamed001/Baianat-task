@@ -51,6 +51,23 @@ export class Vendor {
 	@Field(() => Float)
 	commissionRate: number;
 
+	@Column({ type: 'int', default: 0 })
+	@Field(() => Int)
+	reviewsCount: number;
+
+	@Column({
+		type: 'numeric',
+		precision: 2,
+		scale: 1,
+		default:4.5
+	})
+	@Field(() => Float)
+	averageRating: number | null;
+
+	@Column({ type: 'int', default: 0 })
+	@Field(() => Int)
+	followersCount: number;
+
 	@Column({ type: 'int', nullable: true })
 	@Field(() => Int, { nullable: true })
 	reviewedBy: number | null;

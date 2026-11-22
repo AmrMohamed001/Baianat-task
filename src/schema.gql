@@ -9,6 +9,9 @@ type Vendor {
   description: String
   status: VendorStatus!
   commissionRate: Float!
+  reviewsCount: Int!
+  averageRating: Float!
+  followersCount: Int!
   reviewedBy: Int
   reviewedAt: DateTime
   rejectionReason: String
@@ -175,6 +178,9 @@ type PublicVendor {
   id: Int!
   storeName: String!
   description: String
+  averageRating: Float!
+  reviewsCount: Int!
+  followersCount: Int!
   products: [Product!]!
   reviews: [Review!]!
 }

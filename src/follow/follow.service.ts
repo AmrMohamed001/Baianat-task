@@ -16,21 +16,28 @@ export class FollowService {
 		private readonly i18n: I18nService
 	) {}
 
+	private async refreshFollowers(vendorId: number) {
+	const followersCount = await this.followRepo.countBy({ vendorId });
+	await this.vendorRepo.update(vendorId, { followersCount });
+}
+
 	async follow(clientId: number, vendorId: number) {
-		const vendor = await this.vendorRepo.findOne({ where: { id: vendorId, status: VendorStatus.Verified } });
-		if (!vendor) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_VENDOR'));
-		//todo: compare this way with the exception 23505 
-		await this.followRepo.createQueryBuilder().insert().values({ clientId, vendorId }).orIgnore().execute(); //ignoring the conflicts
-		return vendor;
-	}
+	const vendor = await this.vendorRepo.findOne({ where: { id: vendorId, status: VendorStatus.Verified } });
+	if (!vendor) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_VENDOR'));
 
-	async unfollow(clientId: number, vendorId: number) {
-		const vendor = await this.vendorRepo.findOne({ where: { id: vendorId } });
-		if (!vendor) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_VENDOR'));
+	await this.followRepo.upsert({ clientId, vendorId }, ['clientId', 'vendorId']);
+	await this.refreshFollowers(vendorId);
+	return this.vendorRepo.findOneByOrFail({ id: vendorId });
+}
 
-		await this.followRepo.delete({ clientId, vendorId });
-		return vendor;
-	}
+async unfollow(clientId: number, vendorId: number) {
+	const vendor = await this.vendorRepo.findOne({ where: { id: vendorId } });
+	if (!vendor) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_VENDOR'));
+
+	await this.followRepo.delete({ clientId, vendorId });
+	await this.refreshFollowers(vendorId);
+	return this.vendorRepo.findOneByOrFail({ id: vendorId });
+}
 
 	async myFollowings(clientId: number, args: PaginationArgs) {
 		const qb = this.followRepo

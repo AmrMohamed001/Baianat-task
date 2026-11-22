@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { I18nService } from 'nestjs-i18n';
-import { Repository } from 'typeorm';
+import {Repository } from 'typeorm';
 import { Review } from './review.entity';
 import { CreateReviewArgs } from './dtos/create-review.args';
 import { UpdateReviewArgs } from './dtos/update-review.args';
@@ -29,33 +29,51 @@ export class ReviewService {
 		return review;
 	}
 
+	private async refreshStats(vendorId: number) {
+		const { cnt, avg } = await this.reviewRepo
+			.createQueryBuilder('r')
+			.select('COUNT(*)', 'cnt')
+			.addSelect('AVG(r.rating)', 'avg')
+			.where('r.vendorId = :vendorId', { vendorId })
+			.getRawOne();
+
+		await this.vendorRepo.update(vendorId, {
+			reviewsCount: Number(cnt),
+			averageRating: avg ? Math.round(Number(avg) * 10) / 10 : null,
+		});
+	}
+
 	async create(clientId: number, { vendorId, rating, comment }: CreateReviewArgs) {
 		const vendor = await this.vendorRepo.findOneBy({ id: vendorId, status: VendorStatus.Verified });
 		if (!vendor) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_VENDOR'));
 
-		// delivered paid
+			// delivered paid
 		const bought = await this.orderRepo.existsBy({ clientId, vendorId, status: OrderStatus.Delivered, paymentStatus: PaymentStatus.Paid });
 		if (!bought) throw new ForbiddenException(this.i18n.t('exceptions.REVIEW_NOT_PURCHASED'));
 
 		if (await this.reviewRepo.existsBy({ clientId, vendorId }))
-			 throw new ConflictException(this.i18n.t('exceptions.REVIEW_ALREADY_EXISTS'));
+			throw new ConflictException(this.i18n.t('exceptions.REVIEW_ALREADY_EXISTS'));
 
-		return this.reviewRepo.save(
-			this.reviewRepo.create({ clientId, vendorId, rating, comment})
-		);
+		const row = this.reviewRepo.create({ clientId, vendorId, rating, comment });
+		const review = await this.reviewRepo.save(row);
+		await this.refreshStats(vendorId);
+		return review;
 	}
 
 	async update(clientId: number, { reviewId, rating, comment }: UpdateReviewArgs) {
 		const review = await this.ownership(reviewId, clientId);
 		if (rating !== undefined) review.rating = rating;
 		if (comment !== undefined) review.comment = comment;
-		return this.reviewRepo.save(review);
+		const saved = await this.reviewRepo.save(review);
+		await this.refreshStats(review.vendorId);
+		return saved;
 	}
 
 	async delete(clientId: number, reviewId: number) {
-		const review = await this.ownership(reviewId, clientId);
-		await this.reviewRepo.remove(review);
-		return true;
+			const review = await this.ownership(reviewId, clientId);
+			await this.reviewRepo.remove(review);
+			await this.refreshStats(review.vendorId);
+			return true;
 	}
 
 	async getReviews({ vendorId, ...args }: VendorReviewsArgs) {
