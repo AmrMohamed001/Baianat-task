@@ -10,6 +10,8 @@ import { ProductImage } from './product-image.entity';
 import { PresignedUpload } from '../storage/dtos/presigned-upload.type';
 import { ImageContentType } from '../storage/enums/image-content-type.enum';
 import { ProductImageLoader } from '../dataloader/product-image.loader';
+import { PaginatedPopularProducts } from './dtos/popular-product.type';
+import { PopularProductsArgs } from './dtos/popular-products.args';
 import { ProductsArgs } from './dtos/products.args';
 import { Vendor } from '../vendor/vendor.entity';
 import { VerifiedVendor } from '../vendor/decorators/verified-vendor.decorator';
@@ -97,6 +99,12 @@ export class ProductResolver {
 	@Query(() => PaginatedProducts)
 	products(@Args() args: ProductsArgs, @CurrentUser() user?: User) {
 		return this.productService.findAll(args, args.vendorId, user?.role === UserRole.Client ? user.id : undefined);
+	}
+
+	@OptionalAuth()
+	@Query(() => PaginatedPopularProducts)
+	popularProducts(@Args() args: PopularProductsArgs) {
+		return this.productService.popularProducts(args);
 	}
 
 	@ResolveField(() => Boolean)

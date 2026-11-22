@@ -193,6 +193,19 @@ type PaginatedProducts {
   totalPages: Int!
 }
 
+type PopularProduct {
+  product: Product!
+  totalQuantity: Int!
+}
+
+type PaginatedPopularProducts {
+  data: [PopularProduct!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+}
+
 type PublicVendor {
   id: Int!
   storeName: String!
@@ -320,6 +333,7 @@ type Query {
     sortBy: ProductSortField! = createdAt
     order: SortOrder! = DESC
   ): PaginatedProducts!
+  popularProducts(page: Int! = 1, limit: Int! = 20, from: DateTime, to: DateTime): PaginatedPopularProducts!
   myOrders(page: Int! = 1, limit: Int! = 20, status: OrderStatus): PaginatedOrders!
   order(id: Int!): Order!
   adminOrders(page: Int! = 1, limit: Int! = 20, status: OrderStatus, paymentStatus: PaymentStatus, vendorId: Int, clientId: Int, from: DateTime, to: DateTime): PaginatedOrders!

@@ -19,6 +19,11 @@ import { ProductImage } from './product-image.entity';
 import { StorageService } from '../storage/storage.service';
 import { uploadProfiles } from '../storage/upload-profiles';
 import { ImageContentType } from '../storage/enums/image-content-type.enum';
+import { PopularProductsArgs } from './dtos/popular-products.args';
+import { Order } from '../order/entities/order.entity';
+import { OrderItem } from '../order/entities/order-item.entity';
+import { OrderStatus } from '../order/enums/order-status.enum';
+import { PaymentStatus } from '../order/enums/payment-status.enum';
 
 @Injectable()
 export class ProductService {
@@ -59,6 +64,36 @@ export class ProductService {
 		}
 
 		return this.productRepo.save(this.productRepo.merge(product, input));
+	}
+
+	async popularProducts({ from, to, page, limit }: PopularProductsArgs) {
+		if (from && to && from > to) throw new BadRequestException(this.i18n.t('exceptions.DATE_FROM_AFTER_TO'));
+
+		const qb = this.productRepo
+			.createQueryBuilder('product')
+			.innerJoin(OrderItem, 'item', 'item.productId = product.id')
+			.innerJoin(Order, 'order', 'order.id = item.orderId')
+			.where('order.paymentStatus = :paid', { paid: PaymentStatus.Paid })
+			.andWhere('order.status != :cancelled', { cancelled: OrderStatus.Cancelled })
+			.addSelect('SUM(item.quantity)', 'totalQuantity')
+			.groupBy('product.id')
+			.orderBy('"totalQuantity"', 'DESC')
+			.addOrderBy('MAX(order.createdAt)', 'DESC')
+			.addOrderBy('product.id', 'ASC')
+			.offset((page - 1) * limit)
+			.limit(limit);
+		if (from) qb.andWhere('order.createdAt >= :from', { from });
+		if (to) qb.andWhere('order.createdAt <= :to', { to });
+
+		const { entities, raw } = await qb.getRawAndEntities();
+		const total = await qb.getCount();
+		return {
+			data: entities.map((product, i) => ({ product, totalQuantity: Number(raw[i].totalQuantity) })),
+			total,
+			page,
+			limit,
+			totalPages: Math.ceil(total / limit),
+		};
 	}
 
 	async delete(id: number, vendorId?: number) {
