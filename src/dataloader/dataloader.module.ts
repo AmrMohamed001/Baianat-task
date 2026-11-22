@@ -17,10 +17,13 @@ import { Review } from '../review/review.entity';
 import { ReviewLoader } from './review.loader';
 import { User } from '../user/user.entity';
 import { UserLoader } from './user.loader';
+import { ProductImage } from '../product/product-image.entity';
+import { ProductImageLoader } from './product-image.loader';
+import { StorageModule } from '../storage/storage.module';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([Product, Vendor, Category, CartItem, VendorFollow, OrderStatusHistory, OrderItem, Review, User])],
-	providers: [ProductLoader, VendorLoader, CategoryLoader, CartItemLoader, OrderHistoryLoader, OrderItemLoader, ReviewLoader, UserLoader],
-	exports: [ProductLoader, VendorLoader, CategoryLoader, CartItemLoader, OrderHistoryLoader, OrderItemLoader, ReviewLoader, UserLoader],
+	imports: [TypeOrmModule.forFeature([Product, Vendor, Category, CartItem, VendorFollow, OrderStatusHistory, OrderItem, Review, User, ProductImage]), StorageModule],
+	providers: [ProductLoader, VendorLoader, CategoryLoader, CartItemLoader, OrderHistoryLoader, OrderItemLoader, ReviewLoader, UserLoader, ProductImageLoader],
+	exports: [ProductLoader, VendorLoader, CategoryLoader, CartItemLoader, OrderHistoryLoader, OrderItemLoader, ReviewLoader, UserLoader, ProductImageLoader],
 })
 export class DataloaderModule {}

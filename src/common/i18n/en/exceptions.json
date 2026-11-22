@@ -53,5 +53,9 @@
   "ITEM_UNAVAILABLE": "{name} is no longer available",
   "NOT_FOUND_REVIEW": "Review not found",
   "REVIEW_NOT_PURCHASED": "You can review a vendor only after one of your orders from them is delivered",
-  "REVIEW_ALREADY_EXISTS": "You already reviewed this vendor, update your existing review instead"
+  "REVIEW_ALREADY_EXISTS": "You already reviewed this vendor, update your existing review instead",
+  "INVALID_UPLOAD_KEY": "This upload key is not valid for this resource",
+  "UPLOAD_NOT_FOUND": "The file was not uploaded, please upload it first",
+  "INVALID_UPLOAD": "The uploaded file is too large or is not an allowed image type",
+  "NOT_FOUND_PRODUCT_IMAGE": "Product image not found"
 }

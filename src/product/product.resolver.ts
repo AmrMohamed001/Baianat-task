@@ -5,7 +5,12 @@ import { ProductService } from './product.service';
 import { Product } from './product.entity';
 import { CreateProductInput } from './dtos/create-product.dto';
 import { UpdateProductInput } from './dtos/update-product.dto';
-import { PaginatedProducts } from './dtos/paginated-products.type';import { ProductsArgs } from './dtos/products.args';
+import { PaginatedProducts } from './dtos/paginated-products.type';
+import { ProductImage } from './product-image.entity';
+import { PresignedUpload } from '../storage/dtos/presigned-upload.type';
+import { ImageContentType } from '../storage/enums/image-content-type.enum';
+import { ProductImageLoader } from '../dataloader/product-image.loader';
+import { ProductsArgs } from './dtos/products.args';
 import { Vendor } from '../vendor/vendor.entity';
 import { VerifiedVendor } from '../vendor/decorators/verified-vendor.decorator';
 import { CurrentVendor } from '../vendor/decorators/current-vendor.decorator';
@@ -25,6 +30,7 @@ export class ProductResolver {
 		private readonly productService: ProductService,
 		private readonly vendorLoader: VendorLoader,
 		private readonly categoryLoader: CategoryLoader,
+		private readonly productImageLoader: ProductImageLoader,
 		private readonly i18n: I18nService
 	) {}
 
@@ -48,6 +54,36 @@ export class ProductResolver {
 	@Mutation(() => Boolean)
 	deleteProduct(@Args('id', { type: () => Int }) id: number, @CurrentVendor() vendor?: Vendor) {
 		return this.productService.delete(id, vendor?.id);
+	}
+
+	@VerifiedVendor()
+	@Mutation(() => PresignedUpload)
+	createProductImageUpload(
+		@Args('productId', { type: () => Int }) productId: number,
+		@Args('contentType', { type: () => ImageContentType }) contentType: ImageContentType,
+		@CurrentVendor() vendor?: Vendor
+	) {
+		return this.productService.createImageUpload(productId, contentType, vendor?.id);
+	}
+
+	@VerifiedVendor()
+	@Mutation(() => Product)
+	addProductImages(
+		@Args('productId', { type: () => Int }) productId: number,
+		@Args('keys', { type: () => [String] }) keys: string[],
+		@CurrentVendor() vendor?: Vendor
+	) {
+		return this.productService.addImages(productId, keys, vendor?.id);
+	}
+
+	@VerifiedVendor()
+	@Mutation(() => Product)
+	removeProductImage(
+		@Args('productId', { type: () => Int }) productId: number,
+		@Args('imageId', { type: () => Int }) imageId: number,
+		@CurrentVendor() vendor?: Vendor
+	) {
+		return this.productService.removeImage(productId, imageId, vendor?.id);
 	}
 
 	@VerifiedVendor()
@@ -76,6 +112,11 @@ export class ProductResolver {
 	@ResolveField(() => String, { nullable: true })
 	description(@Parent() product: Product) {
 		return I18nContext.current()?.lang === 'en' ? product.descriptionEn : product.descriptionAr;
+	}
+
+	@ResolveField(() => [ProductImage])
+	images(@Parent() product: Product) {
+		return this.productImageLoader.byProductId.load(product.id);
 	}
 
 	@ResolveField(() => PublicVendor)

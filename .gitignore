@@ -18,6 +18,8 @@ lerna-debug.log*
 # OS
 .DS_Store
 
+#localstack init
+localstack/init/01-s3.sh
 # Tests
 /coverage
 /.nyc_output

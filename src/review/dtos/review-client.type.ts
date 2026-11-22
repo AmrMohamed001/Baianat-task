@@ -9,5 +9,5 @@ export class ReviewClient {
 	fullname: string;
 
 	@Field(() => String, { nullable: true })
-	image: string | null;
+	photoUrl: string | null;
 }

@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { I18nService } from 'nestjs-i18n';
 import { Repository } from 'typeorm';
@@ -15,12 +15,20 @@ import { paginate } from '../common/query/paginate';
 import { fullTextSearch } from '../common/query/search';
 import { sort } from '../common/query/sort';
 import { VendorFollow } from '../follow/follow.entity';
+import { ProductImage } from './product-image.entity';
+import { StorageService } from '../storage/storage.service';
+import { uploadProfiles } from '../storage/upload-profiles';
+import { ImageContentType } from '../storage/enums/image-content-type.enum';
+
 @Injectable()
 export class ProductService {
 	constructor(
 		@InjectRepository(Product) private readonly productRepo: Repository<Product>,
 		@InjectRepository(Category) private readonly categoryRepo: Repository<Category>,
 		@InjectRepository(Vendor) private readonly vendorRepo: Repository<Vendor>,
+		@InjectRepository(ProductImage) private readonly imageRepo: Repository<ProductImage>,
+		private readonly storage: StorageService,
+		private readonly logger: Logger,
 		private readonly i18n: I18nService
 	) {}
 
@@ -62,6 +70,48 @@ export class ProductService {
 		await this.productRepo.softDelete(id);
 		return true;
 	}
+	//#region Images
+	private async ownership(id: number, vendorId: number | undefined) {
+		const product = await this.productRepo.findOne({ where: { id } });
+		if (!product) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_PRODUCT'));
+		if (vendorId !== undefined && product.vendorId !== vendorId) 
+			throw new ForbiddenException(this.i18n.t('exceptions.NOT_OWNER'));
+		return product
+	}
+
+	async createImageUpload(productId: number, contentType: ImageContentType, vendorId?: number) {
+		await this.ownership(productId, vendorId);
+		return this.storage.createPresignedUpload(uploadProfiles.productImage, productId, contentType);
+	}
+
+	async addImages(productId: number, keys: string[], vendorId?: number) {
+		// check ownership
+		const product = await this.ownership(productId, vendorId);
+
+		// verify keys
+		await Promise.all(keys.map((key) => this.storage.verifyUpload(uploadProfiles.productImage, productId, key)));
+
+		// check if key exists before
+		if (await this.imageRepo.exists({ where: keys.map((key) => ({ key })) }))
+			throw new BadRequestException(this.i18n.t('exceptions.INVALID_UPLOAD_KEY'));
+
+		// save the keys
+		await this.imageRepo.save(keys.map((key) => this.imageRepo.create({ productId, key })));
+
+
+		return product;
+	}
+
+	async removeImage(productId: number, imageId: number, vendorId?: number) {
+		const product = await this.ownership(productId, vendorId);
+		const image = await this.imageRepo.findOne({ where: { id: imageId, productId } });
+		if (!image) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_PRODUCT_IMAGE'));
+
+		await this.imageRepo.delete(image.id);
+		this.storage.deleteObject(image.key).catch((e) => this.logger.error(e.message, e.stack));
+		return product;
+	}
+	//#endregion
 	async findAll(args: ProductsArgs, vendorId?: number, clientId?: number) {
 		const { search, categoryIds, minPrice, maxPrice, sortBy = ProductSortField.createdAt, order = SortOrder.DESC } = args;
 		if (minPrice != null && maxPrice != null && minPrice > maxPrice) throw new BadRequestException(this.i18n.t('exceptions.MIN_PRICE_GT_MAX'));
