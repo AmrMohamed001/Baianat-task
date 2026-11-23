@@ -20,7 +20,7 @@ import { OrderStatusHistory } from './entities/order-status-history.entity';
 import { MyOrdersArgs } from './dtos/my-orders.args';
 import { VendorOrdersArgs } from './dtos/vendor-orders.args';
 import { AdminOrdersArgs } from './dtos/admin-orders.args';
-import { paginate } from '../common/query/paginate';
+import { QueryService } from '../common/query/query.service';
 import { PaymentStatus } from './enums/payment-status.enum';
 import { OrderStatus } from './enums/order-status.enum';
 
@@ -28,6 +28,7 @@ import { OrderStatus } from './enums/order-status.enum';
 export class OrderService {
 	private platform_user_id:number
 	constructor(
+		private readonly query: QueryService,
 		@InjectRepository(Order) private readonly orderRepo: Repository<Order>,
 		private readonly notifications: NotificationService,
 		private readonly cartService: CartService,
@@ -124,11 +125,10 @@ export class OrderService {
 		const qb = this.orderRepo
 			.createQueryBuilder('order')
 			.innerJoinAndSelect('order.checkout', 'checkout') // for shippingAddress
-			.where('order.clientId = :clientId', { clientId })
-			.orderBy('order.createdAt', 'DESC')
-			.addOrderBy('order.id', 'DESC');
+			.where('order.clientId = :clientId', { clientId });
+		this.query.sort(qb, 'createdAt');
 		if (args.status) qb.andWhere('order.status = :status', { status: args.status });
-		return paginate(qb, args);
+		return this.query.getPage(qb, args);
 	}
 
 	vendorOrders(args: VendorOrdersArgs, vendorId: number) {
@@ -137,11 +137,10 @@ export class OrderService {
 			.innerJoinAndSelect('order.checkout', 'checkout')
 			.innerJoin('order.client', 'client')
 			.addSelect(['client.id', 'client.fullname'])
-			.where('order.vendorId = :vendorId', { vendorId })
-			.orderBy('order.createdAt', 'DESC')
-			.addOrderBy('order.id', 'DESC');
+			.where('order.vendorId = :vendorId', { vendorId });
+		this.query.sort(qb, 'createdAt');
 		if (args.status) qb.andWhere('order.status = :status', { status: args.status });
-		return paginate(qb, args);
+		return this.query.getPage(qb, args);
 	}
 
 	adminOrders(args: AdminOrdersArgs) {
@@ -152,16 +151,15 @@ export class OrderService {
 			.createQueryBuilder('order')
 			.innerJoinAndSelect('order.checkout', 'checkout')
 			.innerJoin('order.client', 'client')
-			.addSelect(['client.id', 'client.fullname'])
-			.orderBy('order.createdAt', 'DESC')
-			.addOrderBy('order.id', 'DESC');
+			.addSelect(['client.id', 'client.fullname']);
+		this.query.sort(qb, 'createdAt');
 		if (status) qb.andWhere('order.status = :status', { status });
 		if (paymentStatus) qb.andWhere('order.paymentStatus = :paymentStatus', { paymentStatus });
 		if (vendorId) qb.andWhere('order.vendorId = :vendorId', { vendorId });
 		if (clientId) qb.andWhere('order.clientId = :clientId', { clientId });
 		if (from) qb.andWhere('order.createdAt >= :from', { from });
 		if (to) qb.andWhere('order.createdAt <= :to', { to });
-		return paginate(qb, args);
+		return this.query.getPage(qb, args);
 	}
 
 	async findOne(id: number, clientId: number) {

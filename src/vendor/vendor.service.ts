@@ -7,7 +7,7 @@ import { Vendor } from './vendor.entity';
 import { VendorStatus } from './enums/vendor-status.enum';
 import { VendorsArgs } from './dtos/vendors.args';
 import { NotificationService } from '../notification/notification.service';
-import { paginate } from '../common/query/paginate';
+import { QueryService } from '../common/query/query.service';
 import { PopularVendorsArgs } from './dtos/popular-vendors.args';
 import { Order } from '../order/entities/order.entity';
 import { OrderStatus } from '../order/enums/order-status.enum';
@@ -21,6 +21,7 @@ export interface CreateVendorData {
 @Injectable()
 export class VendorService {
   constructor(
+		private readonly query: QueryService,
     @InjectRepository(Vendor) private readonly vendorRepo: Repository<Vendor>,
     private readonly notifications: NotificationService,
     private readonly config: ConfigService,
@@ -53,9 +54,10 @@ export class VendorService {
   }
 
   findAll(args: VendorsArgs) {
-    const qb = this.vendorRepo.createQueryBuilder('v').orderBy('v.createdAt', 'DESC').addOrderBy('v.id', 'DESC');
+    const qb = this.vendorRepo.createQueryBuilder('v');
+    this.query.sort(qb, 'createdAt');
     if (args.status) qb.andWhere('v.status = :status', { status: args.status });
-    return paginate(qb, args);
+    return this.query.getPage(qb, args);
   }
 
   async setCommission(vendorId: number, commissionRate: number) {
@@ -116,9 +118,9 @@ export class VendorService {
       .groupBy('vendor.id')
       .orderBy('"score"', 'DESC')
       .addOrderBy('"salesCount"', 'DESC')
-      .addOrderBy('vendor.id', 'ASC')
-      .offset((page - 1) * limit)
-      .limit(limit);
+      .addOrderBy('vendor.id', 'ASC');
+
+    this.query.paginate(qb, { page, limit });
 
     const { entities, raw } = await qb.getRawAndEntities();
     const total = await qb.getCount();

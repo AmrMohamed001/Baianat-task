@@ -6,11 +6,12 @@ import { VendorFollow } from './follow.entity';
 import { Vendor } from '../vendor/vendor.entity';
 import { VendorStatus } from '../vendor/enums/vendor-status.enum';
 import { PaginationArgs } from '../common/query/types/pagination.args';
-import { paginate } from '../common/query/paginate';
+import { QueryService } from '../common/query/query.service';
 
 @Injectable()
 export class FollowService {
 	constructor(
+		private readonly query: QueryService,
 		@InjectRepository(VendorFollow) private readonly followRepo: Repository<VendorFollow>,
 		@InjectRepository(Vendor) private readonly vendorRepo: Repository<Vendor>,
 		private readonly i18n: I18nService
@@ -43,10 +44,9 @@ async unfollow(clientId: number, vendorId: number) {
 		const qb = this.followRepo
 			.createQueryBuilder('f')
 			.innerJoinAndSelect('f.vendor', 'v')
-			.where('f.clientId = :clientId', { clientId })
-			.orderBy('f.createdAt', 'DESC')
-			.addOrderBy('f.id', 'DESC');
-		const page = await paginate(qb, args);
+			.where('f.clientId = :clientId', { clientId });
+		this.query.sort(qb, 'createdAt');
+		const page = await this.query.getPage(qb, args);
 
 		return { ...page, data: page.data.map((f: VendorFollow) => f.vendor) };
 	}
@@ -57,10 +57,9 @@ async unfollow(clientId: number, vendorId: number) {
 			.createQueryBuilder('f')
 			.innerJoin('f.client', 'u')
 			.addSelect(['u.id', 'u.fullname'])
-			.where('f.vendorId = :vendorId', { vendorId })
-			.orderBy('f.createdAt', 'DESC')
-			.addOrderBy('f.id', 'DESC');
-		const page = await paginate(qb, args);
+			.where('f.vendorId = :vendorId', { vendorId });
+		this.query.sort(qb, 'createdAt');
+		const page = await this.query.getPage(qb, args);
 	
 		return { ...page, data: page.data.map((f: VendorFollow) => ({ id: f.client.id, name: f.client.fullname, followedAt: f.createdAt })) };
 	}

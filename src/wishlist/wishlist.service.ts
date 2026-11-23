@@ -5,11 +5,12 @@ import { Repository } from 'typeorm';
 import { WishlistItem } from './wishlist.entity';
 import { Product } from '../product/product.entity';
 import { PaginationArgs } from '../common/query/types/pagination.args';
-import { paginate } from '../common/query/paginate';
+import { QueryService } from '../common/query/query.service';
 
 @Injectable()
 export class WishlistService {
 	constructor(
+		private readonly query: QueryService,
 		@InjectRepository(WishlistItem) private readonly wishlistRepo: Repository<WishlistItem>,
 		@InjectRepository(Product) private readonly productRepo: Repository<Product>,
 		private readonly i18n: I18nService
@@ -35,6 +36,6 @@ export class WishlistService {
 			.where('item.clientId = :clientId', { clientId })
 			.orderBy('item.createdAt', 'DESC')
 			.addOrderBy('item.id', 'DESC');
-		return paginate(qb, args);
+		return this.query.getPage(qb, args);
 	}
 }

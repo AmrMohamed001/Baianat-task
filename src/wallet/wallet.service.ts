@@ -6,7 +6,7 @@ import { Wallet } from './wallet.entity';
 import { Transaction } from './transaction.entity';
 import { TransactionType } from './enums/transaction-type.enum';
 import { PaginationArgs } from '../common/query/types/pagination.args';
-import { paginate } from '../common/query/paginate';
+import { QueryService } from '../common/query/query.service';
 import { TransactionsArgs } from './dtos/transactions.args';
 import { Vendor } from '../vendor/vendor.entity';
 import { VendorStatus } from '../vendor/enums/vendor-status.enum';
@@ -14,6 +14,7 @@ import { VendorStatus } from '../vendor/enums/vendor-status.enum';
 @Injectable()
 export class WalletService {
   constructor(
+		private readonly query: QueryService,
     @InjectRepository(Wallet) private readonly walletRepo: Repository<Wallet>,
     @InjectRepository(Transaction) private readonly transactionRepo: Repository<Transaction>,
     private readonly dataSource: DataSource,
@@ -36,20 +37,17 @@ export class WalletService {
   transactions(walletId: number, args: PaginationArgs) {
     const qb = this.transactionRepo
       .createQueryBuilder('transaction')
-      .where('transaction.walletId = :walletId', { walletId })
-      .orderBy('transaction.createdAt', 'DESC')
-      .addOrderBy('transaction.id', 'DESC');
-    return paginate(qb, args);
+      .where('transaction.walletId = :walletId', { walletId });
+    this.query.sort(qb, 'createdAt');
+    return this.query.getPage(qb, args);
   }
 
   allTransactions(args: TransactionsArgs) {
     const { type, vendorId, orderId, from, to } = args;
     if (from && to && from > to) throw new BadRequestException(this.i18n.t('exceptions.DATE_FROM_AFTER_TO'));
 
-    const qb = this.transactionRepo
-      .createQueryBuilder('transaction')
-      .orderBy('transaction.createdAt', 'DESC')
-      .addOrderBy('transaction.id', 'DESC');
+    const qb = this.transactionRepo.createQueryBuilder('transaction');
+    this.query.sort(qb, 'createdAt');
     if (type) qb.andWhere('transaction.type = :type', { type });
     if (orderId) qb.andWhere('transaction.orderId = :orderId', { orderId });
     if (from) qb.andWhere('transaction.createdAt >= :from', { from });
@@ -58,7 +56,7 @@ export class WalletService {
       qb.innerJoin('transaction.wallet', 'wallet')
         .innerJoin(Vendor, 'vendor', 'vendor.ownerId = wallet.userId')
         .andWhere('vendor.id = :vendorId', { vendorId });
-    return paginate(qb, args);
+    return this.query.getPage(qb, args);
   }
 
   payoutVendor(vendorId: number, amount: number, adminId: number) {

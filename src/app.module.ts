@@ -9,6 +9,7 @@ import { I18nModule, QueryResolver, AcceptLanguageResolver } from 'nestjs-i18n';
 import { ConfigService } from '@nestjs/config';
 import { AppResolver } from './app.resolver';
 import { LoggerModule } from './common/logger/logger.module';
+import { QueryModule } from './common/query/query.module';
 import { APP_FILTER } from '@nestjs/core';
 import { QueryFailedExceptionFilter } from './common/filters/query-failed.filter';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -80,6 +81,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     }),
 
     LoggerModule,
+    QueryModule,
     DatabaseModule,
     UserModule,
 

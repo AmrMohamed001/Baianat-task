@@ -17,7 +17,7 @@ import { UpdatePasswordDto } from './dtos/update-password.dto';
 import * as bcrypt from 'bcryptjs';
 import { I18nService } from 'nestjs-i18n';
 import { UsersArgs } from './dtos/users.args';
-import { paginate } from '../common/query/paginate';
+import { QueryService } from '../common/query/query.service';
 import { StorageService } from '../storage/storage.service';
 import { uploadProfiles } from '../storage/upload-profiles';
 import { ImageContentType } from '../storage/enums/image-content-type.enum';
@@ -25,6 +25,7 @@ import { ImageContentType } from '../storage/enums/image-content-type.enum';
 @Injectable()
 export class UserService {
 	constructor(
+		private readonly query: QueryService,
 		@InjectRepository(User) private userRepo: Repository<User>,
 		private readonly dataSource: DataSource,
 		private readonly storage: StorageService,
@@ -51,10 +52,11 @@ export class UserService {
 	}
 	//#region Find 
 	findAll(args: UsersArgs) {
-		const qb = this.userRepo.createQueryBuilder('u').orderBy('u.createdAt', 'DESC').addOrderBy('u.id', 'DESC');
+		const qb = this.userRepo.createQueryBuilder('u');
+		this.query.sort(qb, 'createdAt');
 		if (args.role) qb.andWhere('u.role = :role', { role: args.role });
 		if (args.isActive != null) qb.andWhere('u.isActive = :isActive', { isActive: args.isActive });
-		return paginate(qb, args);
+		return this.query.getPage(qb, args);
 	}
 	 
 	async findByEmailOrUsername(emailOrUsername: string) {

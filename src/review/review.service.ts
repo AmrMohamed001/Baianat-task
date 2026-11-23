@@ -11,11 +11,12 @@ import { OrderStatus } from '../order/enums/order-status.enum';
 import { PaymentStatus } from '../order/enums/payment-status.enum';
 import { Vendor } from '../vendor/vendor.entity';
 import { VendorStatus } from '../vendor/enums/vendor-status.enum';
-import { paginate } from '../common/query/paginate';
+import { QueryService } from '../common/query/query.service';
 
 @Injectable()
 export class ReviewService {
 	constructor(
+		private readonly query: QueryService,
 		@InjectRepository(Review) private readonly reviewRepo: Repository<Review>,
 		@InjectRepository(Order) private readonly orderRepo: Repository<Order>,
 		@InjectRepository(Vendor) private readonly vendorRepo: Repository<Vendor>,
@@ -82,10 +83,9 @@ export class ReviewService {
 
 		const qb = this.reviewRepo
 			.createQueryBuilder('r')
-			.where('r.vendorId = :vendorId', { vendorId })
-			.orderBy('r.createdAt', 'DESC')
-			.addOrderBy('r.id', 'DESC');
-		return paginate(qb, args);
+			.where('r.vendorId = :vendorId', { vendorId });
+		this.query.sort(qb, 'createdAt');
+		return this.query.getPage(qb, args);
 	}
 
 	

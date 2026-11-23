@@ -11,9 +11,7 @@ import { UpdateProductInput } from './dtos/update-product.dto';
 import { ProductsArgs } from './dtos/products.args';
 import { ProductSortField } from './enums/product-sort.enum';
 import { SortOrder } from '../common/query/enums/sort-order.enum';
-import { paginate } from '../common/query/paginate';
-import { fullTextSearch } from '../common/query/search';
-import { sort } from '../common/query/sort';
+import { QueryService } from '../common/query/query.service';
 import { VendorFollow } from '../follow/follow.entity';
 import { ProductImage } from './product-image.entity';
 import { StorageService } from '../storage/storage.service';
@@ -28,6 +26,7 @@ import { PaymentStatus } from '../order/enums/payment-status.enum';
 @Injectable()
 export class ProductService {
 	constructor(
+		private readonly query: QueryService,
 		@InjectRepository(Product) private readonly productRepo: Repository<Product>,
 		@InjectRepository(Category) private readonly categoryRepo: Repository<Category>,
 		@InjectRepository(Vendor) private readonly vendorRepo: Repository<Vendor>,
@@ -79,11 +78,10 @@ export class ProductService {
 			.groupBy('product.id')
 			.orderBy('"totalQuantity"', 'DESC')
 			.addOrderBy('MAX(order.createdAt)', 'DESC')
-			.addOrderBy('product.id', 'ASC')
-			.offset((page - 1) * limit)
-			.limit(limit);
+			.addOrderBy('product.id', 'ASC');
 		if (from) qb.andWhere('order.createdAt >= :from', { from });
 		if (to) qb.andWhere('order.createdAt <= :to', { to });
+		this.query.paginate(qb, { page, limit });
 
 		const { entities, raw } = await qb.getRawAndEntities();
 		const total = await qb.getCount();
@@ -166,9 +164,9 @@ export class ProductService {
 		if (minPrice != null) qb.andWhere('product.price >= :minPrice', { minPrice });
 		if (maxPrice != null) qb.andWhere('product.price <= :maxPrice', { maxPrice });
 
-		if (search) fullTextSearch(qb, search);
-		sort(qb, sortBy, order);
-		return paginate(qb, args);
+		if (search) this.query.search(qb, search);
+		this.query.sort(qb, sortBy, order);
+		return this.query.getPage(qb, args);
 	}
 
 	findAvailable(id: number) {
