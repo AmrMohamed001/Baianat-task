@@ -53,11 +53,10 @@ export class PaymentService {
 		}
 	}
 
-	// one refund per order, the key makes a retry return the same refund instead of a second one
-	async refund(paymentIntentId: string, amount: number, orderId: number) {
+	async refund(paymentIntentId: string, amount: number, orderId: number, actorId: number) {
 		try {
 			const refund = await this.stripeClient.refunds.create(
-				{ payment_intent: paymentIntentId, amount, metadata: { orderId: String(orderId) } },
+				{ payment_intent: paymentIntentId, amount, metadata: { orderId: String(orderId), actorId: String(actorId) } },
 				{ idempotencyKey: `refund-order-${orderId}` }
 			);
 			return refund.id;
@@ -65,5 +64,9 @@ export class PaymentService {
 			this.logger.error(`Stripe refund failed: ${e?.type ?? e?.name} ${e?.code ?? ''}`.trim());
 			throw new ServiceUnavailableException(this.i18n.t('exceptions.REFUND_FAILED'));
 		}
+	}
+
+	async listRefunds(paymentIntentId: any): Promise<Stripe.Refund[]> {
+		return (await this.stripeClient.refunds.list({ payment_intent: paymentIntentId, limit: 100 })).data;
 	}
 }

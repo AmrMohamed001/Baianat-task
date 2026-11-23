@@ -270,7 +270,7 @@ stripe payment_intents confirm pi_xxx --payment-method pm_card_chargeDeclined --
 |---|---|
 | `payment_intent.succeeded` | Checkout and orders become `Paid`, the cart is emptied, vendor and platform wallets are credited, and a confirmation email is queued. |
 | `payment_intent.payment_failed`, `payment_intent.canceled` | Checkout and orders become `Failed`, pending orders are `Cancelled`, and their stock is returned. |
-| `charge.refunded` | Logged only. Refunds are started by the API itself. |
+| `charge.refunded` | The refund is confirmed: the vendor and platform wallets are debited, each ledger row and the order get the Stripe refund id, and the order becomes `Refunded`. The client and the vendor get an "order refunded" email. See [Refunds](#refunds). |
 
 Each event is processed **once**: its id is saved in `sys_stripe_events`, and a repeated delivery is ignored.
 
@@ -393,7 +393,7 @@ There is one wallet per vendor and one **platform wallet** (`type = Platform`), 
 |---|---|---|
 | Payment succeeds (`Sale`) | + vendor share | + commission |
 | Admin pays the vendor (`Payout`) | − amount | |
-| Order refunded (`Refund`) | − vendor share | − commission |
+| Refund confirmed by Stripe (`Refund`) | − vendor share | − commission |
 
 - Amounts are signed: positive adds to the balance, negative takes from it.
 - Each change locks the wallet row and runs in the same database transaction as the order update, so a balance never drifts from its ledger.
@@ -407,7 +407,14 @@ An admin calls `refundOrder` on a paid order:
 - If the order is not cancelled yet, it is cancelled, the stock is returned and the money is refunded.
 - If it is already cancelled, only the money is refunded.
 
-A refund takes the vendor share and the commission back from both wallets, refunds the order total on Stripe, and marks the order `Refunded`. An order can only be refunded once. Stripe receives an idempotency key, so a retry cannot refund twice.
+A refund happens in two steps:
+
+1. **The request.** The API asks Stripe to refund the order total, and puts the order id and the id of the user who asked in the refund's metadata. Nothing in the database changes yet, so right after the call the order still shows `Paid`. The request is refused if the vendor's wallet no longer holds their share, for example after a payout.
+2. **The confirmation.** Stripe sends `charge.refunded`. The API finds the successful refund of each order that is still `Paid`, takes the vendor share and the commission back from the two wallets, and saves the Stripe refund id on both ledger rows and on the order. The order becomes `Refunded` and gets its `refundedAt` date.
+
+An order can only be refunded once. The request carries an idempotency key, so a retry returns the same Stripe refund, and the confirmation skips orders that are already `Refunded`. A refund made by hand in the Stripe dashboard has no order id, so it is only logged.
+
+Refunds need the webhook. Without `stripe listen` or a configured endpoint, the customer gets the money back but the wallets and the order never change.
 
 ### Order status
 

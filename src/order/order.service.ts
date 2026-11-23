@@ -1,17 +1,14 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NotificationService } from '../notification/notification.service';
-import { I18nContext, I18nService } from 'nestjs-i18n';
+import { I18nService } from 'nestjs-i18n';
 import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { Cart } from '../cart/cart.entity';
 import { CartItem } from '../cart/cart-item.entity';
 import { CartService } from '../cart/cart.service';
 import { Product } from '../product/product.entity';
 import { PaymentService } from '../payment/payment.service';
-import { WalletService } from '../wallet/wallet.service';
-import { Transaction } from '../wallet/transaction.entity';
-import { TransactionType } from '../wallet/enums/transaction-type.enum';
-import { WalletType } from '../wallet/enums/wallet-type.enum';
+import { Wallet } from '../wallet/wallet.entity';
 import { Vendor } from '../vendor/vendor.entity';
 import { Checkout } from './entities/checkout.entity';
 import { Order } from './entities/order.entity';
@@ -32,7 +29,6 @@ export class OrderService {
 		private readonly notifications: NotificationService,
 		private readonly cartService: CartService,
 		private readonly paymentService: PaymentService,
-		private readonly walletService: WalletService,
 		private readonly dataSource: DataSource,
 		private readonly i18n: I18nService,
 		private readonly logger: Logger
@@ -203,38 +199,18 @@ export class OrderService {
 		//or just refund it if canceled
 		await this.dataSource.transaction((manager) => this.refund(manager, order, adminId));
 
-		// then send mail
-		// sending for the client and the owner of the product
-		this.notifications.send('order-refunded', { orderId: order.id, userId: order.clientId });
-		this.notifications.send('order-refunded', { orderId: order.id, userId: order.vendor.ownerId });
 
 
 		return this.orderRepo.findOneOrFail({ where: { id: order.id }, relations: { checkout: true, client: true } });
 	}
 
-	// handle wallets - call refund - save refundid
 	private async refund(manager: EntityManager, order: Order, actorId: number) {
-		const locked = await manager.findOneOrFail(Order, { where: { id: order.id }, lock: { mode: 'pessimistic_write' } });
-		if (locked.paymentStatus === PaymentStatus.Refunded) throw new BadRequestException(this.i18n.t('exceptions.ORDER_ALREADY_REFUNDED'));
-
 		const vendor = await manager.findOneByOrFail(Vendor, { id: order.vendorId });
+		const wallet = await manager.findOneByOrFail(Wallet, { userId: vendor.ownerId });
+		if (wallet.balance < order.total - order.commissionAmount) throw new BadRequestException(this.i18n.t('exceptions.INSUFFICIENT_BALANCE'));
+
 		const checkout = await manager.findOneByOrFail(Checkout, { id: order.checkoutId });
-		const meta = { orderId: order.id, paymentIntentId: checkout.paymentIntentId!, createdBy: actorId };
-
-		// money vendor + transaction
-		const vendorShare = order.total - order.commissionAmount;
-		if (vendorShare > 0) await this.walletService.applyTransaction(manager, { userId: vendor.ownerId }, TransactionType.Refund, vendorShare, meta);
-		
-		// money paltform admin + transaction
-		if (order.commissionAmount > 0)
-			await this.walletService.applyTransaction(manager, { type: WalletType.Platform }, TransactionType.Refund, order.commissionAmount, meta);
-
-		// stripe refund
-		const stripeRefundId = await this.paymentService.refund(meta.paymentIntentId, order.total, order.id);
-		
-		// set the refundid to the order and transactions
-		await manager.update(Transaction, { orderId: order.id, type: TransactionType.Refund }, { stripeRefundId });
-		await manager.update(Order, order.id, { paymentStatus: PaymentStatus.Refunded, stripeRefundId, refundedAt: new Date() });
+		await this.paymentService.refund(checkout.paymentIntentId!, order.total, order.id, actorId);
 	}
 
 	// status update + history + (cancel: stock back, refund) in one transaction, then the notification job
@@ -262,7 +238,7 @@ export class OrderService {
 			}
 		});
 
-		// notify the owner of product and the client
+		// notify vendor,client
 		this.notifications.send('order-status-changed', { orderId: order.id, userId: order.clientId, from: order.status, to: status, at: new Date().toUTCString() });
 		this.notifications.send('order-status-changed', { orderId: order.id, userId: order.vendor.ownerId, from: order.status, to: status, at: new Date().toUTCString() });
 		return this.orderRepo.findOneOrFail({ where: { id: order.id }, relations: { checkout: true, client: true } });

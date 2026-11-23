@@ -70,7 +70,7 @@ export class WalletService {
   }
 
     // wallet trans + transs creation
-  async applyTransaction(manager: EntityManager, owner: FindOptionsWhere<Wallet>, type: TransactionType, amount: number, link: { orderId?: number; paymentIntentId?: string; createdBy?: number } = {}) {
+  async applyTransaction(manager: EntityManager, owner: FindOptionsWhere<Wallet>, type: TransactionType, amount: number, link: { orderId?: number; paymentIntentId?: string; stripeRefundId?: string; createdBy?: number } = {}) {
     const wallet = await manager.findOne(Wallet, { where: owner, lock: { mode: 'pessimistic_write' } });
     if (!wallet) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_WALLET'));
 
@@ -78,6 +78,6 @@ export class WalletService {
     if (wallet.balance + signed < 0) throw new BadRequestException(this.i18n.t('exceptions.INSUFFICIENT_BALANCE'));
 
     await manager.update(Wallet, wallet.id, { balance: wallet.balance + signed });
-    return manager.save(manager.create(Transaction, { walletId: wallet.id, type, amount: signed, orderId: link.orderId ?? null, paymentIntentId: link.paymentIntentId ?? null, createdBy: link.createdBy ?? null }));
+    return manager.save(manager.create(Transaction, { walletId: wallet.id, type, amount: signed, orderId: link.orderId ?? null, paymentIntentId: link.paymentIntentId ?? null, stripeRefundId: link.stripeRefundId ?? null, createdBy: link.createdBy ?? null }));
   }
 }

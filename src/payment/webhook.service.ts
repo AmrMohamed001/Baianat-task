@@ -11,7 +11,9 @@ import { OrderStatusHistory } from '../order/entities/order-status-history.entit
 import { PaymentStatus } from '../order/enums/payment-status.enum';
 import { OrderStatus } from '../order/enums/order-status.enum';
 import { Product } from '../product/product.entity';
+import { Vendor } from '../vendor/vendor.entity';
 import { WalletService } from '../wallet/wallet.service';
+import { PaymentService } from './payment.service';
 import { TransactionType } from '../wallet/enums/transaction-type.enum';
 import { WalletType } from '../wallet/enums/wallet-type.enum';
 
@@ -21,11 +23,12 @@ export class StripeWebhookService {
 		private readonly notifications: NotificationService,
 		private readonly dataSource: DataSource,
 		private readonly walletService: WalletService,
+		private readonly paymentService: PaymentService,
 		private readonly logger: Logger
 	) {}
 
 	async process(event: Stripe.Event) {
-		const job = await this.dataSource.transaction(async (manager) => {
+		const result = await this.dataSource.transaction(async (manager) => {
 			await manager.insert(StripeEvent, { id: event.id, type: event.type });
 
 			switch (event.type) {
@@ -35,11 +38,48 @@ export class StripeWebhookService {
 				case 'payment_intent.canceled':
 					return this.paymentFailed(manager, event.data.object);
 				case 'charge.refunded':
-					this.logger.log(`stripe event ${event.id}: charge refunded for ${event.data.object.payment_intent}`);
+					return this.chargeRefunded(manager, event.data.object);
 			}
 		});
+	}
 
-		if (job) this.notifications.send(job.name, job.data);
+	private async chargeRefunded(manager: EntityManager, charge: Stripe.Charge) {
+		const paymentIntentId = charge.payment_intent as string;
+		const refunds = await this.paymentService.listRefunds(paymentIntentId);
+
+
+		for (const refund of refunds) {
+			const orderId = Number(refund.metadata?.orderId);
+
+			if (!orderId || refund.status !== 'succeeded') {
+				this.logger.log(`stripe refund ${refund.id} skipped`);
+				continue;
+			}
+
+			const order = await manager.findOne(Order, { where: { id: orderId }, lock: { mode: 'pessimistic_write' } });
+			
+			if (!order || order.paymentStatus !== PaymentStatus.Paid) {
+				this.logger.log(`stripe refund ${refund.id} return non order`);
+				continue;
+			}
+
+			const vendor = await manager.findOneByOrFail(Vendor, { id: order.vendorId });
+			const meta = { orderId, paymentIntentId, stripeRefundId: refund.id, createdBy: Number(refund.metadata?.actorId)};
+
+			// money vendor + transaction
+			const vendorShare = order.total - order.commissionAmount;
+			if (vendorShare > 0) await this.walletService.applyTransaction(manager, { userId: vendor.ownerId }, TransactionType.Refund, vendorShare, meta);
+
+			// money platform + transaction
+			if (order.commissionAmount > 0)
+				await this.walletService.applyTransaction(manager, { type: WalletType.Platform }, TransactionType.Refund, order.commissionAmount, meta);
+
+			await manager.update(Order, order.id, { paymentStatus: PaymentStatus.Refunded, stripeRefundId: refund.id, refundedAt: new Date() });
+
+			// mail user,vendor
+			this.notifications.send('order-refunded', { orderId, userId: order.clientId });
+			this.notifications.send('order-refunded', { orderId, userId: vendor.ownerId });
+		}
 	}
 	// errors enforce retry solve with log
 	private async paymentSucceeded(manager: EntityManager, intent: Stripe.PaymentIntent) {
