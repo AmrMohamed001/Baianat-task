@@ -1,12 +1,11 @@
-import { ObjectLiteral, SelectQueryBuilder } from 'typeorm';
 
 const AR = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
 const EN = /[a-zA-Z]/;
 
 
 
-export function fullTextSearch<T extends ObjectLiteral>
-		(qb: SelectQueryBuilder<T>, text: string) {
+export function fullTextSearch
+		(qb: any, text: string) {
 	const a = qb.alias;
 	const hasAr = AR.test(text);
 	const hasEn = EN.test(text);

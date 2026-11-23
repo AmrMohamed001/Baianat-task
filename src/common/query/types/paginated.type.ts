@@ -4,7 +4,7 @@ import { PaginatedResult } from '../interfaces/pagination.interface';
 
 export function Paginated<T>(ItemType: Type<T>) {
 	@ObjectType({ isAbstract: true })
-	abstract class PaginatedType implements PaginatedResult<T> {
+	class PaginatedType implements PaginatedResult<T> {
 		@Field(() => [ItemType])
 		data: T[];
 
@@ -20,5 +20,5 @@ export function Paginated<T>(ItemType: Type<T>) {
 		@Field(() => Int)
 		totalPages: number;
 	}
-	return PaginatedType as Type<PaginatedResult<T>>;
+	return PaginatedType;
 }

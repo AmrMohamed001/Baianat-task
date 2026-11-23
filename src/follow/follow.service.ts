@@ -48,7 +48,7 @@ async unfollow(clientId: number, vendorId: number) {
 			.addOrderBy('f.id', 'DESC');
 		const page = await paginate(qb, args);
 
-		return { ...page, data: page.data.map((f) => f.vendor) };
+		return { ...page, data: page.data.map((f: VendorFollow) => f.vendor) };
 	}
 
 	async myFollowers(vendorId: number, args: PaginationArgs) {
@@ -61,7 +61,7 @@ async unfollow(clientId: number, vendorId: number) {
 			.orderBy('f.createdAt', 'DESC')
 			.addOrderBy('f.id', 'DESC');
 		const page = await paginate(qb, args);
-
-		return { ...page, data: page.data.map((f) => ({ id: f.client.id, name: f.client.fullname, followedAt: f.createdAt })) };
+	
+		return { ...page, data: page.data.map((f: VendorFollow) => ({ id: f.client.id, name: f.client.fullname, followedAt: f.createdAt })) };
 	}
 }
