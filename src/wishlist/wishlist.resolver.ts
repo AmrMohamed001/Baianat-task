@@ -1,6 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
 import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { I18nService } from 'nestjs-i18n';
 import { WishlistService } from './wishlist.service';
 import { Product } from '../product/product.entity';
 import { PaginatedProducts } from '../product/dtos/paginated-products.type';

@@ -22,6 +22,7 @@ import { OrderHistoryLoader } from '../dataloader/order-history.loader';
 import { OrderItemLoader } from '../dataloader/order-item.loader';
 import { OrderItem } from './entities/order-item.entity';
 import { OrderStatusHistory } from './entities/order-status-history.entity';
+import { Throttle } from '@nestjs/throttler';
 
 @Resolver(() => Order)
 export class OrderResolver {
@@ -33,6 +34,7 @@ export class OrderResolver {
 	) {}
 
 	@Roles(UserRole.Client)
+	@Throttle({ default: { limit: 5, ttl: 60 * 60 * 1000 } })
 	@Mutation(() => CheckoutResult)
 	checkout(@Args() args: CheckoutArgs, @CurrentUser() user: User) {
 		if (user.role !== UserRole.Client) throw new ForbiddenException(this.i18n.t('exceptions.FORBIDDEN'));
@@ -85,6 +87,7 @@ export class OrderResolver {
 	}
 
 	@Roles(UserRole.SuperAdmin)
+	@Throttle({ default: { limit: 5, ttl: 60 * 60 * 1000 } })
 	@Mutation(() => Order)
 	refundOrder(@Args('orderId', { type: () => Int }) orderId: number, @CurrentUser() admin: User) {
 		return this.orderService.refundOrder(orderId, admin.id);

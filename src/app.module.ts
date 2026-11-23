@@ -10,7 +10,8 @@ import { ConfigService } from '@nestjs/config';
 import { AppResolver } from './app.resolver';
 import { LoggerModule } from './common/logger/logger.module';
 import { QueryModule } from './common/query/query.module';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
 import { QueryFailedExceptionFilter } from './common/filters/query-failed.filter';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { DatabaseModule } from './database/database.module';
@@ -45,6 +46,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     GraphQLModule.forRoot<ApolloDriverConfig>({
 			driver: ApolloDriver,
 			autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+      context: ({ req, res }) => ({ req, res }),
 			playground: true,
 			path: '/graphql',
       includeStacktraceInErrorResponses: process.env.NODE_ENV !== 'production',
@@ -62,10 +64,10 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       ],
     }),
 
-        ThrottlerModule.forRoot([
+      ThrottlerModule.forRoot([
 			{
 				ttl: 60000,
-				limit: 10,
+				limit: 200,
 			},
 		]),
     
@@ -84,7 +86,6 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     QueryModule,
     DatabaseModule,
     UserModule,
-
     CartModule,
     OrderModule,
     PaymentModule,
@@ -106,6 +107,10 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     {
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: GqlThrottlerGuard,
     },
   ],
 })

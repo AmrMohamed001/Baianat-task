@@ -11,6 +11,7 @@ import { TransactionsArgs } from './dtos/transactions.args';
 import { PaginationArgs } from '../common/query/types/pagination.args';
 import { UserRole } from '../user/enums/user-role.enum';
 import { User } from '../user/user.entity';
+import { Throttle } from '@nestjs/throttler';
 
 @Resolver(() => Wallet)
 export class WalletResolver {
@@ -35,6 +36,7 @@ export class WalletResolver {
 	}
 
 	@Roles(UserRole.SuperAdmin)
+	@Throttle({ default: { limit: 5, ttl: 60 * 60 * 1000 } })
 	@Mutation(() => Transaction)
 	payoutVendor(@Args() args: PayoutVendorArgs, @CurrentUser() admin: User) {
 		return this.walletService.payoutVendor(args.vendorId, args.amount, admin.id);

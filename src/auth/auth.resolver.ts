@@ -5,24 +5,28 @@ import { RegisterVendorInput } from './dtos/register-vendor.dto';
 import { LoginInput } from './dtos/login.dto';
 import { AuthPayload } from './dtos/auth-payload.dto';
 import { Public } from './decorators/public.decorator';
+import { Throttle } from '@nestjs/throttler';
 
 @Resolver()
 export class AuthResolver {
 	constructor(private readonly authService: AuthService) {}
 
 	@Public()
+	@Throttle({ default: { limit: 5, ttl: 60 * 60 * 1000 } })
 	@Mutation(() => String)
 	registerClient(@Args('input') input: RegisterClientInput) {
 		return this.authService.registerClient(input);
 	}
 
 	@Public()
+	@Throttle({ default: { limit: 5, ttl: 60 * 60 * 1000 } })
 	@Mutation(() => String)
 	registerVendor(@Args('input') input: RegisterVendorInput) {
 		return this.authService.registerVendor(input);
 	}
 
 	@Public()
+	@Throttle({ default: { limit: 5, ttl: 60 * 60 * 1000 } })
 	@Mutation(() => AuthPayload)
 	login(@Args('input') input: LoginInput) {
 		return this.authService.login(input);
