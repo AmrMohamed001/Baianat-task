@@ -11,6 +11,7 @@ import {
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
 import { User } from '../user/user.entity';
 import { Transaction } from './transaction.entity';
+import { WalletType } from './enums/wallet-type.enum';
 
 @Entity('sys_wallets')
 @ObjectType()
@@ -18,6 +19,10 @@ export class Wallet {
 	@PrimaryGeneratedColumn()
 	@Field(() => Int)
 	id: number;
+
+	@Column({ type: 'enum', enum: WalletType, default: WalletType.Vendor })
+	@Field(() => WalletType)
+	type: WalletType;
 
 	@Column()
 	userId: number;

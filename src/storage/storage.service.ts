@@ -50,6 +50,6 @@ export class StorageService {
 	}
 
 	urlFor(key: string) {
-		return `${this.config.getOrThrow('S3_PUBLIC_URL')}/${key}`;
+		return `${this.config.getOrThrow('S3_BASE_URL')}/${key}`;
 	}
 }

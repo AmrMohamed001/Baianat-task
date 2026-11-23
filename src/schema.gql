@@ -136,8 +136,14 @@ enum TransactionType {
 
 type Wallet {
   id: Int!
+  type: WalletType!
   balance: Float!
   transactions(page: Int! = 1, limit: Int! = 20): PaginatedTransactions!
+}
+
+enum WalletType {
+  Vendor
+  Platform
 }
 
 type User {

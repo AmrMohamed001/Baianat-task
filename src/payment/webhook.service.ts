@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { NotificationService } from '../notification/notification.service';
 import { DataSource, EntityManager, In } from 'typeorm';
 import Stripe from 'stripe';
@@ -14,6 +13,7 @@ import { OrderStatus } from '../order/enums/order-status.enum';
 import { Product } from '../product/product.entity';
 import { WalletService } from '../wallet/wallet.service';
 import { TransactionType } from '../wallet/enums/transaction-type.enum';
+import { WalletType } from '../wallet/enums/wallet-type.enum';
 
 @Injectable()
 export class StripeWebhookService {
@@ -21,7 +21,6 @@ export class StripeWebhookService {
 		private readonly notifications: NotificationService,
 		private readonly dataSource: DataSource,
 		private readonly walletService: WalletService,
-		private readonly config: ConfigService,
 		private readonly logger: Logger
 	) {}
 
@@ -59,11 +58,10 @@ export class StripeWebhookService {
 		const cart = await manager.findOneBy(Cart, { userId: checkout.clientId });
 		if (cart) await manager.delete(CartItem, { cartId: cart.id });
 
-		const adminId = Number(this.config.getOrThrow('SUPERADMIN_ID_FOR_COMMISIION'));
 		const orders = await manager.find(Order, { where: { checkoutId: checkout.id }, relations: { vendor: true }, order: { vendor: { ownerId: 'ASC' } } });
 		for (const order of orders){
-			await this.walletService.applyTransaction(manager, order.vendor.ownerId, TransactionType.Sale, order.total - order.commissionAmount, { orderId: order.id, paymentIntentId: intent.id });
-			await this.walletService.applyTransaction(manager, adminId, TransactionType.Sale, order.commissionAmount, { orderId: order.id, paymentIntentId: intent.id });
+			await this.walletService.applyTransaction(manager, { userId: order.vendor.ownerId }, TransactionType.Sale, order.total - order.commissionAmount, { orderId: order.id, paymentIntentId: intent.id });
+			await this.walletService.applyTransaction(manager, { type: WalletType.Platform }, TransactionType.Sale, order.commissionAmount, { orderId: order.id, paymentIntentId: intent.id });
 		}
 		return { name: 'payment-succeeded', data: { checkoutId: checkout.id, userId: checkout.clientId } };
 	}

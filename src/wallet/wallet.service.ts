@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { I18nService } from 'nestjs-i18n';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { DataSource, EntityManager, FindOptionsWhere, Repository } from 'typeorm';
 import { Wallet } from './wallet.entity';
 import { Transaction } from './transaction.entity';
 import { TransactionType } from './enums/transaction-type.enum';
@@ -65,13 +65,13 @@ export class WalletService {
       if (!vendor) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_VENDOR'));
       if (vendor.status !== VendorStatus.Verified) throw new BadRequestException(this.i18n.t('exceptions.VENDOR_NOT_APPROVED'));
 
-      return this.applyTransaction(manager, vendor.ownerId, TransactionType.Payout, amount, { createdBy: adminId });
+      return this.applyTransaction(manager, { userId: vendor.ownerId }, TransactionType.Payout, amount, { createdBy: adminId });
     });
   }
 
     // wallet trans + transs creation
-  async applyTransaction(manager: EntityManager, userId: number, type: TransactionType, amount: number, link: { orderId?: number; paymentIntentId?: string; createdBy?: number } = {}) {
-    const wallet = await manager.findOne(Wallet, { where: { userId }, lock: { mode: 'pessimistic_write' } });
+  async applyTransaction(manager: EntityManager, owner: FindOptionsWhere<Wallet>, type: TransactionType, amount: number, link: { orderId?: number; paymentIntentId?: string; createdBy?: number } = {}) {
+    const wallet = await manager.findOne(Wallet, { where: owner, lock: { mode: 'pessimistic_write' } });
     if (!wallet) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_WALLET'));
 
     const signed = type === TransactionType.Sale ? amount : -amount;

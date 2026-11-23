@@ -2,7 +2,6 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import { InjectRepository } from '@nestjs/typeorm';
 import { NotificationService } from '../notification/notification.service';
 import { I18nContext, I18nService } from 'nestjs-i18n';
-import { ConfigService } from '@nestjs/config';
 import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { Cart } from '../cart/cart.entity';
 import { CartItem } from '../cart/cart-item.entity';
@@ -12,6 +11,7 @@ import { PaymentService } from '../payment/payment.service';
 import { WalletService } from '../wallet/wallet.service';
 import { Transaction } from '../wallet/transaction.entity';
 import { TransactionType } from '../wallet/enums/transaction-type.enum';
+import { WalletType } from '../wallet/enums/wallet-type.enum';
 import { Vendor } from '../vendor/vendor.entity';
 import { Checkout } from './entities/checkout.entity';
 import { Order } from './entities/order.entity';
@@ -26,7 +26,6 @@ import { OrderStatus } from './enums/order-status.enum';
 
 @Injectable()
 export class OrderService {
-	private platform_user_id:number
 	constructor(
 		private readonly query: QueryService,
 		@InjectRepository(Order) private readonly orderRepo: Repository<Order>,
@@ -34,13 +33,10 @@ export class OrderService {
 		private readonly cartService: CartService,
 		private readonly paymentService: PaymentService,
 		private readonly walletService: WalletService,
-		private readonly config: ConfigService,
 		private readonly dataSource: DataSource,
 		private readonly i18n: I18nService,
 		private readonly logger: Logger
-	) {
-		this.platform_user_id= +config.get('SUPERADMIN_ID_FOR_COMMISIION')
-	}
+	) {}
 
 	checkout(userId: number, shippingAddress: string) {
 		return this.dataSource.transaction(async (manager) => {
@@ -227,11 +223,11 @@ export class OrderService {
 
 		// money vendor + transaction
 		const vendorShare = order.total - order.commissionAmount;
-		if (vendorShare > 0) await this.walletService.applyTransaction(manager, vendor.ownerId, TransactionType.Refund, vendorShare, meta);
+		if (vendorShare > 0) await this.walletService.applyTransaction(manager, { userId: vendor.ownerId }, TransactionType.Refund, vendorShare, meta);
 		
 		// money paltform admin + transaction
 		if (order.commissionAmount > 0)
-			await this.walletService.applyTransaction(manager, Number(this.config.getOrThrow('SUPERADMIN_ID_FOR_COMMISIION')), TransactionType.Refund, order.commissionAmount, meta);
+			await this.walletService.applyTransaction(manager, { type: WalletType.Platform }, TransactionType.Refund, order.commissionAmount, meta);
 
 		// stripe refund
 		const stripeRefundId = await this.paymentService.refund(meta.paymentIntentId, order.total, order.id);
