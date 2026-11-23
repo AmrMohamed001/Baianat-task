@@ -210,7 +210,7 @@ type PublicVendor {
   id: Int!
   storeName: String!
   description: String
-  averageRating: Float!
+  averageRating: Float
   reviewsCount: Int!
   followersCount: Int!
   products: [Product!]!
@@ -272,6 +272,20 @@ type PaginatedTransactions {
 
 type PaginatedVendors {
   data: [Vendor!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+}
+
+type PopularVendor {
+  vendor: PublicVendor!
+  salesCount: Int!
+  score: Float!
+}
+
+type PaginatedPopularVendors {
+  data: [PopularVendor!]!
   total: Int!
   page: Int!
   limit: Int!
@@ -352,6 +366,7 @@ type Query {
     to: DateTime
   ): PaginatedTransactions!
   vendors(page: Int! = 1, limit: Int! = 20, status: VendorStatus): PaginatedVendors!
+  popularVendors(page: Int! = 1, limit: Int! = 20, from: DateTime, to: DateTime): PaginatedPopularVendors!
   myStore: Vendor!
   myFollowings(page: Int! = 1, limit: Int! = 20): PaginatedPublicVendors!
   myFollowers(page: Int! = 1, limit: Int! = 20): PaginatedFollowers!

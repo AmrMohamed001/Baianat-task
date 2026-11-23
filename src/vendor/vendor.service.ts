@@ -8,6 +8,10 @@ import { VendorStatus } from './enums/vendor-status.enum';
 import { VendorsArgs } from './dtos/vendors.args';
 import { NotificationService } from '../notification/notification.service';
 import { paginate } from '../common/query/paginate';
+import { PopularVendorsArgs } from './dtos/popular-vendors.args';
+import { Order } from '../order/entities/order.entity';
+import { OrderStatus } from '../order/enums/order-status.enum';
+import { PaymentStatus } from '../order/enums/payment-status.enum';
 
 export interface CreateVendorData {
   storeName: string;
@@ -89,5 +93,45 @@ export class VendorService {
 
     this.notifications.send('vendor-rejected', { storeName: vendor.storeName, userId: vendor.ownerId });
     return Object.assign(vendor, changes);
+  }
+
+  async popularVendors({ from, to, page, limit }: PopularVendorsArgs) {
+    if (from && to && from > to) throw new BadRequestException(this.i18n.t('exceptions.DATE_FROM_AFTER_TO'));
+
+    const scs = { rating: 0.4, sales: 0.6};
+
+    const qb = this.vendorRepo
+      .createQueryBuilder('vendor')
+      .leftJoin(
+        Order,'order',
+        'order.vendorId = vendor.id AND order.paymentStatus = :paid AND order.status != :cancelled AND order.createdAt BETWEEN :from AND :to',
+        { paid: PaymentStatus.Paid, cancelled: OrderStatus.Cancelled, from: from ?? new Date(0), to: to ?? new Date() }
+      )
+      .where('vendor.status = :verified', { verified: VendorStatus.Verified })
+      .andWhere('(vendor."reviewsCount" > 0 OR order.id IS NOT NULL)') 
+      .addSelect('COUNT(order.id)', 'salesCount')
+      .addSelect(
+        `${scs.rating} * coalesce(vendor."averageRating", 0) / 5` +
+      ` + ${scs.sales} * count(order.id)::float / (count(order.id) + 10)`, 'score')
+      .groupBy('vendor.id')
+      .orderBy('"score"', 'DESC')
+      .addOrderBy('"salesCount"', 'DESC')
+      .addOrderBy('vendor.id', 'ASC')
+      .offset((page - 1) * limit)
+      .limit(limit);
+
+    const { entities, raw } = await qb.getRawAndEntities();
+    const total = await qb.getCount();
+    return {
+      data: entities.map((vendor, i) => ({
+        vendor,
+        salesCount: Number(raw[i].salesCount),
+        score: Number(raw[i].score),
+      })),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 }
