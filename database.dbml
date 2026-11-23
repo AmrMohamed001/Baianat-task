@@ -1,0 +1,266 @@
+// Multi-Vendor E-Commerce 
+// Ids are auto-increment integers. Table and column names are exactly as in the database (camelCase columns).
+// Money is stored in cents (bigint).
+// Enum values are the stored Postgres values.
+
+Enum user_role {
+  "Super Admin"
+  Vendor
+  Client
+}
+
+Enum vendor_status {
+  Pending
+  Verified
+  Rejected
+}
+
+Enum order_status {
+  Pending
+  Processing
+  Shipped
+  Delivered
+  Cancelled
+}
+
+Enum payment_status {
+  Pending
+  Paid
+  Failed
+  Refunded
+}
+
+Enum transaction_type {
+  Sale
+  Payout
+  Refund
+}
+
+Enum wallet_type {
+  Vendor
+  Platform
+}
+
+Table sys_users {
+  id int [pk, increment]
+  username varchar [unique, not null]
+  fullname varchar [not null]
+  email varchar [unique, not null]
+  password varchar [not null, note: 'bcrypt hash']
+  changePasswordAt timestamptz [note: 'null until the password is changed']
+  photoKey varchar [note: 'S3 key of the profile photo']
+  role user_role [not null, default: 'Client']
+  isActive boolean [not null, default: true, note: 'admin can deactivate a user']
+  phone varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, default: `now()`]
+}
+
+Table sys_vendors {
+  id int [pk, increment]
+  ownerId int [unique, not null, ref: - sys_users.id]
+  storeName varchar(60) [not null, note: 'unique ignoring case (unique index on lower(storeName))']
+  description varchar(500)
+  status vendor_status [not null, default: 'Pending']
+  commissionRate numeric(5,2) [not null, default: 10, note: 'percent taken by the platform']
+  reviewsCount int [not null, default: 0]
+  averageRating numeric(2,1) [note: 'null while the vendor has no reviews']
+  followersCount int [not null, default: 0]
+  reviewedBy int [ref: > sys_users.id, note: 'admin who approved or rejected']
+  reviewedAt timestamptz
+  rejectionReason varchar(500)
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, default: `now()`]
+}
+
+Table sys_vendor_follows {
+  id int [pk, increment]
+  clientId int [not null, ref: > sys_users.id]
+  vendorId int [not null, ref: > sys_vendors.id]
+  createdAt timestamptz [not null, default: `now()`]
+
+  indexes {
+    (clientId, vendorId) [unique]
+    vendorId
+  }
+}
+
+Table sys_categories {
+  id int [pk, increment]
+  nameAr varchar(50) [unique, not null]
+  nameEn varchar(50) [unique, not null]
+  createdAt timestamptz [not null, default: `now()`]
+  updatedAt timestamptz [not null, default: `now()`]
+}
+
+Table sys_products {
+  id int [pk, increment]
+  vendorId int [not null, ref: > sys_vendors.id]
+  categoryId int [ref: > sys_categories.id, note: 'null only for soft-deleted products']
+  nameAr varchar(120) [not null]
+  nameEn varchar(120) [not null]
+  descriptionAr varchar(2000)
+  descriptionEn varchar(2000)
+  price bigint [not null, note: 'in cents']
+  stock int [not null, default: 0]
+  searchVectorAr tsvector [note: 'generated, stored (full-text search, Arabic)']
+  searchVectorEn tsvector [note: 'generated, stored (full-text search, English)']
+  createdAt timestamptz [not null, default: `now()`]
+  updatedAt timestamptz [not null, default: `now()`]
+  deletedAt timestamptz [note: 'soft delete']
+
+  indexes {
+    vendorId
+    categoryId
+    searchVectorAr [type: gin]
+    searchVectorEn [type: gin]
+  }
+}
+
+Table sys_product_images {
+  id int [pk, increment]
+  productId int [not null, ref: > sys_products.id]
+  key varchar [unique, not null, note: 'S3 key']
+  createdAt timestamptz [not null, default: `now()`]
+
+  indexes {
+    productId
+  }
+}
+
+Table sys_wishlist_items {
+  id int [pk, increment]
+  clientId int [not null, ref: > sys_users.id]
+  productId int [not null, ref: > sys_products.id]
+  createdAt timestamptz [not null, default: `now()`]
+
+  indexes {
+    (clientId, productId) [unique]
+  }
+}
+
+Table sys_carts {
+  id int [pk, increment]
+  userId int [unique, not null, ref: - sys_users.id]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, default: `now()`]
+}
+
+Table sys_cart_items {
+  id int [pk, increment]
+  cartId int [not null, ref: > sys_carts.id]
+  productId int [not null, ref: > sys_products.id]
+  quantity int [not null]
+  createdAt timestamptz [not null, default: `now()`]
+  updatedAt timestamptz [not null, default: `now()`]
+
+  indexes {
+    (cartId, productId) [unique, note: 'same product twice = one row']
+    productId
+  }
+}
+
+Table sys_checkouts {
+  id int [pk, increment]
+  clientId int [not null, ref: > sys_users.id, note: 'only one Pending checkout per client (partial unique index)']
+  total bigint [not null, note: 'in cents']
+  shippingAddress varchar(500) [not null]
+  status payment_status [not null, default: 'Pending']
+  paymentIntentId varchar [unique]
+  createdAt timestamptz [not null, default: `now()`]
+  updatedAt timestamptz [not null, default: `now()`]
+}
+
+Table sys_orders {
+  id int [pk, increment]
+  checkoutId int [not null, ref: > sys_checkouts.id]
+  clientId int [not null, ref: > sys_users.id]
+  vendorId int [not null, ref: > sys_vendors.id]
+  total bigint [not null, note: 'in cents']
+  commissionAmount bigint [not null, note: 'in cents, platform cut']
+  status order_status [not null, default: 'Pending']
+  paymentStatus payment_status [not null, default: 'Pending']
+  stripeRefundId varchar(255)
+  refundedAt timestamptz
+  createdAt timestamptz [not null, default: `now()`]
+  updatedAt timestamptz [not null, default: `now()`]
+
+  indexes {
+    checkoutId
+    clientId
+    vendorId
+  }
+}
+
+Table sys_order_items {
+  id int [pk, increment]
+  orderId int [not null, ref: > sys_orders.id]
+  productId int [ref: > sys_products.id, note: 'null if the product row is gone']
+  nameAr varchar(120) [not null, note: 'snapshot at purchase']
+  nameEn varchar(120) [not null, note: 'snapshot at purchase']
+  priceAtPurchase bigint [not null, note: 'in cents, copied from product at checkout']
+  quantity int [not null]
+
+  indexes {
+    orderId
+  }
+}
+
+Table sys_order_status_history {
+  id int [pk, increment]
+  orderId int [not null, ref: > sys_orders.id]
+  status order_status [not null]
+  changedBy int [ref: > sys_users.id, note: 'null = system']
+  createdAt timestamptz [not null, default: `now()`]
+
+  indexes {
+    orderId
+  }
+}
+
+Table sys_wallets {
+  id int [pk, increment]
+  userId int [unique, not null, ref: - sys_users.id]
+  type wallet_type [not null, default: 'Vendor', note: 'Platform = the wallet that receives the commission']
+  balance bigint [not null, default: 0, note: 'in cents']
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, default: `now()`]
+}
+
+Table sys_transactions {
+  id int [pk, increment]
+  walletId int [not null, ref: > sys_wallets.id]
+  orderId int [ref: > sys_orders.id]
+  type transaction_type [not null]
+  amount bigint [not null, note: 'in cents']
+  createdBy int [ref: > sys_users.id, note: 'null = system']
+  paymentIntentId varchar(255) [note: 'Stripe payment intent id']
+  stripeRefundId varchar(255) [note: 'only for Refund']
+  createdAt timestamptz [not null, default: `now()`]
+
+  indexes {
+    walletId
+    paymentIntentId
+  }
+}
+
+Table sys_stripe_events {
+  id varchar(255) [pk, note: 'Stripe event id']
+  type varchar(100) [not null]
+  createdAt timestamptz [not null, default: `now()`, note: 'used to ignore duplicate webhooks']
+}
+
+Table sys_reviews {
+  id int [pk, increment]
+  clientId int [not null, ref: > sys_users.id]
+  vendorId int [not null, ref: > sys_vendors.id]
+  rating smallint [not null, note: '1 to 5']
+  comment varchar(1000)
+  createdAt timestamptz [not null, default: `now()`]
+  updatedAt timestamptz [not null, default: `now()`]
+
+  indexes {
+    (clientId, vendorId) [unique, note: 'one review per client per vendor']
+    vendorId
+  }
+}
