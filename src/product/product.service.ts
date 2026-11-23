@@ -160,7 +160,7 @@ export class ProductService {
 			.andWhere('owner.isActive = true');
 
 		// filtering
-		if (clientId) qb.leftJoin(VendorFollow, 'follow', 'follow.vendorId = product.vendorId AND follow.clientId = :clientId', { clientId }).orderBy('follow.id', 'DESC', 'NULLS LAST');
+		if (clientId) qb.leftJoin(VendorFollow, 'follow', 'follow.vendorId = product.vendorId AND follow.clientId = :clientId', { clientId }).orderBy('(follow.id IS NOT NULL)', 'DESC');
 		if (vendorId) qb.andWhere('product.vendorId = :vendorId', { vendorId });
 		if (categoryIds?.length) qb.andWhere('product.categoryId IN (:...categoryIds)', { categoryIds });
 		if (minPrice != null) qb.andWhere('product.price >= :minPrice', { minPrice });
