@@ -4,7 +4,7 @@ export class RemoveExpiredPaymentStatus1795110667430 implements MigrationInterfa
     name = 'RemoveExpiredPaymentStatus1795110667430'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP INDEX "public"."IDX_9bc509876d3b232194cfb18d24"`); // its predicate uses the enum
+        await queryRunner.query(`DROP INDEX "public"."IDX_9bc509876d3b232194cfb18d24"`); 
         await queryRunner.query(`ALTER TYPE "public"."sys_checkouts_status_enum" RENAME TO "sys_checkouts_status_enum_old"`);
         await queryRunner.query(`CREATE TYPE "public"."sys_checkouts_status_enum" AS ENUM('Pending', 'Paid', 'Failed', 'Refunded')`);
         await queryRunner.query(`ALTER TABLE "sys_checkouts" ALTER COLUMN "status" DROP DEFAULT`);
@@ -15,7 +15,7 @@ export class RemoveExpiredPaymentStatus1795110667430 implements MigrationInterfa
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP INDEX "public"."IDX_9bc509876d3b232194cfb18d24"`); // its predicate uses the enum
+        await queryRunner.query(`DROP INDEX "public"."IDX_9bc509876d3b232194cfb18d24"`); 
         await queryRunner.query(`CREATE TYPE "public"."sys_checkouts_status_enum_old" AS ENUM('Pending', 'Paid', 'Failed', 'Expired', 'Refunded')`);
         await queryRunner.query(`ALTER TABLE "sys_checkouts" ALTER COLUMN "status" DROP DEFAULT`);
         await queryRunner.query(`ALTER TABLE "sys_checkouts" ALTER COLUMN "status" TYPE "public"."sys_checkouts_status_enum_old" USING "status"::"text"::"public"."sys_checkouts_status_enum_old"`);

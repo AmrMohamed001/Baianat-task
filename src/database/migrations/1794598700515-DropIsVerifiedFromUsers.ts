@@ -1,7 +1,5 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-// The vendor's state lives on sys_vendors.status. If email verification is
-// needed later, add an `emailVerified` column under that name.
 export class DropIsVerifiedFromUsers1794598700515 implements MigrationInterface {
     name = 'DropIsVerifiedFromUsers1794598700515'
 

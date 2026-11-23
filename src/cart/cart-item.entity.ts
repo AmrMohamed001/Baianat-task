@@ -3,7 +3,7 @@ import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { Cart } from './cart.entity';
 import { Product } from '../product/product.entity';
 
-@Index(['cartId', 'productId'], { unique: true }) // same product twice = one row, quantity summed
+@Index(['cartId', 'productId'], { unique: true })
 @Index(['productId'])
 @Entity('sys_cart_items')
 @ObjectType()

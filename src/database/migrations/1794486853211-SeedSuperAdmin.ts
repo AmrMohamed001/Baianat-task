@@ -1,9 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 import { hash } from "bcryptjs";
 
-// Creates the first Super Admin. The password is never stored in the repo:
-// set ADMIN_PASSWORD (and optionally ADMIN_EMAIL) in the environment that runs
-// `migration:run`. Running it again is safe: an existing "admin" is left alone.
 export class SeedSuperAdmin1794486853211 implements MigrationInterface {
     name = 'SeedSuperAdmin1794486853211'
 

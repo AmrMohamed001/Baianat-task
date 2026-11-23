@@ -14,8 +14,6 @@ import { Vendor } from '../vendor/vendor.entity';
 import { Category } from '../category/category.entity';
 
  //gin indexes, created in the migration
-@Index('IDX_products_search_vector_ar', { synchronize: false })
-@Index('IDX_products_search_vector_en', { synchronize: false })
 @Index(['vendorId'])
 @Index(['categoryId'])
 @Entity('sys_products')

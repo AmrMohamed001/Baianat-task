@@ -26,7 +26,6 @@ export class OrderItem {
 	@JoinColumn({ name: 'productId' })
 	product: Product | null;
 
-	// snapshot, so old orders load without the product row
 	@Column({ type: 'varchar', length: 120 })
 	@Field()
 	nameAr: string;
@@ -36,7 +35,7 @@ export class OrderItem {
 	nameEn: string;
 
 	@Column({ type: 'bigint', transformer: { to: (v: number) => v, from: (v: string) => Number(v) } })
-	@Field(() => Int) // cents, copied from the product at checkout
+	@Field(() => Int) // cents,copied from product at checkout
 	priceAtPurchase: number;
 
 	@Column({ type: 'int' })

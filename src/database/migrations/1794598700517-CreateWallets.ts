@@ -1,6 +1,5 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-// One wallet per user (the admin needs one too). Balance is integer cents.
 export class CreateWallets1794598700517 implements MigrationInterface {
     name = 'CreateWallets1794598700517'
 

@@ -134,7 +134,7 @@ export class ProductResolver {
 
 	@ResolveField(() => Category, { nullable: true })
 	category(@Parent() product: Product) {
-		if (product.categoryId === null) return null; // only soft-deleted products whose category was deleted
+		if (product.categoryId === null) return null; 
 		return this.categoryLoader.byId.load(product.categoryId);
 	}
 }

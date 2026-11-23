@@ -1,6 +1,5 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-// Replaced by sys_users.photoKey (profile photo uploads).
 export class DropImageFromUsers1795360000000 implements MigrationInterface {
     name = 'DropImageFromUsers1795360000000'
 

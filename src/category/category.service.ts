@@ -16,21 +16,21 @@ export class CategoryService {
 	) {}
 
 	findAll() {
-		return this.categoryRepo.find({ order: { id: 'ASC' } }); // name in the request language: CategoryResolver.name
+		return this.categoryRepo.find({ order: { id: 'ASC' } });
 	}
 
 	create(input: CreateCategoryInput) {
-		return this.categoryRepo.save(this.categoryRepo.create(input)); // duplicate name -> 23505 -> DUPLICATE_FIELD
+		return this.categoryRepo.save(this.categoryRepo.create(input));
 	}
 
 	async update(id: number, input: UpdateCategoryInput) {
 		const category = await this.findById(id);
-		return this.categoryRepo.save(this.categoryRepo.merge(category, input)); // merge skips the undefined (not sent) name
+		return this.categoryRepo.save(this.categoryRepo.merge(category, input)); 
 	}
 
 	async delete(id: number) {
 		const category = await this.findById(id);
-		if (await this.productRepo.exists({ where: { categoryId: id } })) // active only; soft-deleted get categoryId = NULL by the FK
+		if (await this.productRepo.exists({ where: { categoryId: id } }))
 			throw new BadRequestException(this.i18n.t('exceptions.CATEGORY_HAS_PRODUCTS'));
 		await this.categoryRepo.remove(category);
 		return true;

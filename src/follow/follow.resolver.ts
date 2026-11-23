@@ -22,7 +22,7 @@ export class FollowResolver {
 	@Roles(UserRole.Client)
 	@Mutation(() => PublicVendor)
 	followVendor(@Args('vendorId', { type: () => Int }) vendorId: number, @CurrentUser() user: User) {
-		if (user.role !== UserRole.Client) throw new ForbiddenException(this.i18n.t('exceptions.FORBIDDEN')); // RolesGuard lets SuperAdmin through
+		if (user.role !== UserRole.Client) throw new ForbiddenException(this.i18n.t('exceptions.FORBIDDEN')); 
 		return this.followService.follow(user.id, vendorId);
 	}
 
@@ -42,7 +42,7 @@ export class FollowResolver {
 	@VerifiedVendor()
 	@Query(() => PaginatedFollowers)
 	myFollowers(@Args() args: PaginationArgs, @CurrentVendor() vendor: Vendor) {
-		if (!vendor) throw new ForbiddenException(this.i18n.t('exceptions.FORBIDDEN')); // admin: no vendor
+		if (!vendor) throw new ForbiddenException(this.i18n.t('exceptions.FORBIDDEN'));
 		return this.followService.myFollowers(vendor.id, args);
 	}
 }

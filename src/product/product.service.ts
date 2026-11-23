@@ -149,7 +149,7 @@ export class ProductService {
 		const { search, categoryIds, minPrice, maxPrice, sortBy = ProductSortField.createdAt, order = SortOrder.DESC } = args;
 		if (minPrice != null && maxPrice != null && minPrice > maxPrice) throw new BadRequestException(this.i18n.t('exceptions.MIN_PRICE_GT_MAX'));
 
-		// only verified vendors whose owner is active
+		// only verified vendors
 		const qb = this.productRepo
 			.createQueryBuilder('product')
 			.innerJoin('product.vendor', 'vendor')
