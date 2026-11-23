@@ -12,7 +12,7 @@ export class PublicVendor {
 	@Field(() => String, { nullable: true })
 	description: string | null;
 
-	@Field(() => Float)
+	@Field(() => Float, { nullable: true })
 	averageRating: number | null;
 
 	@Field(() => Int)

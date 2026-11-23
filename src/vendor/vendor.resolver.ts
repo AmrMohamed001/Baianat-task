@@ -2,6 +2,9 @@ import { Args, Int, Mutation, Parent, Query, ResolveField, Resolver } from '@nes
 import { VendorsArgs } from './dtos/vendors.args';
 import { PaginatedVendors } from './dtos/paginated-vendors.type';
 import { SetVendorCommissionArgs } from './dtos/set-vendor-commission.args';
+import { PaginatedPopularVendors } from './dtos/popular-vendor.type';
+import { PopularVendorsArgs } from './dtos/popular-vendors.args';
+import { OptionalAuth } from '../auth/decorators/optional-auth.decorator';
 import { VendorService } from './vendor.service';
 import { RejectVendorInput } from './dtos/reject-vendor.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -20,6 +23,12 @@ export class VendorResolver {
 	@Query(() => PaginatedVendors)
 	vendors(@Args() args: VendorsArgs) {
 		return this.vendorService.findAll(args);
+	}
+
+	@OptionalAuth()
+	@Query(() => PaginatedPopularVendors)
+	popularVendors(@Args() args: PopularVendorsArgs) {
+		return this.vendorService.popularVendors(args);
 	}
 
 	//for pending vendors too
