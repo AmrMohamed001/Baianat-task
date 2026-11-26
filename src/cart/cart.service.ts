@@ -23,10 +23,10 @@ export class CartService {
 	}
 
 	private async findOrCreate(userId: number) {
-		return (await this.cartRepo.findOne({ where: { userId } })) ?? this.cartRepo.save(this.cartRepo.create({ userId }));
+		return (await this.cartRepo.findOne({ where: { userId } })) ?? this.createForUser(userId)
 	}
 
-	myCart(userId: number) { // resolve by dataloaders
+	myCart(userId: number) { // resolve items by dataloaders
 		return this.findOrCreate(userId);
 	}
 
@@ -36,7 +36,9 @@ export class CartService {
 	}
 
 	total(items: CartItem[]) {
-		return items.filter((i) => this.isAvailable(i)).reduce((sum, i) => sum + i.product.price * i.quantity, 0);
+		return items
+			.filter((i) => this.isAvailable(i))
+			.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
 	}
 
 	async add(userId: number, productId: number, quantity: number) {
