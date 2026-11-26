@@ -1,10 +1,9 @@
 import { Type } from '@nestjs/common';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
-import { PaginatedResult } from '../interfaces/pagination.interface';
 
 export function Paginated<T>(ItemType: Type<T>) {
 	@ObjectType({ isAbstract: true })
-	class PaginatedType implements PaginatedResult<T> {
+	class PaginatedType{
 		@Field(() => [ItemType])
 		data: T[];
 

@@ -63,7 +63,7 @@ export class OrderService {
 
 
 			// group by vendor
-			const byVendor = new Map<number, { commissionRate: number; total: number; items: CartItem[] }>();
+			const byVendor = new Map();
 			for (const item of items) {
 				const { product } = item;
 				if (!this.cartService.isAvailable(item)) 
@@ -87,7 +87,11 @@ export class OrderService {
 				
 				const od = manager.create(Order, { checkoutId: checkout.id, clientId: checkout.clientId, vendorId, total, commissionAmount: Math.round((total * commissionRate) / 100) })
 				const order = await manager.save(od);
+
+				// history
 				await manager.save(manager.create(OrderStatusHistory, { orderId: order.id, status: OrderStatus.Pending, changedBy: userId }));
+				
+				// items
 				await manager.save(
 					items.map(({ product, quantity }) =>
 						manager.create(OrderItem, {

@@ -33,18 +33,14 @@ export class UserService {
 		private readonly i18n: I18nService
 	) {}
 
-	private hashPassword(password: string)
-	{
-		return bcrypt.hash(password, 12);
-	}
+	private hashPassword(password: string){return bcrypt.hash(password, 12)}
 
-	async createUser(data: CreateUserDto,role: UserRole,manager?: EntityManager): Promise<User> {
+	async createUser(data: CreateUserDto,role: UserRole,manager?: EntityManager) {
 		const repo = manager ? manager.getRepository(User) : this.userRepo;
 		if (await repo.exists({ where: { email:data.email } })) throw new ConflictException(this.i18n.t('exceptions.EMAIL_ALREADY_USED'));
 
 		const user = repo.create({
 			...data,
-			email:data.email,
 			role,
 			password: await this.hashPassword(data.password),
 		});
@@ -121,7 +117,7 @@ export class UserService {
 			if (!user) throw new NotFoundException(this.i18n.t('exceptions.NOT_FOUND_USER'));
 			if (isStoreUpdate && user.role !== UserRole.Vendor)
 				throw new BadRequestException(this.i18n.t('exceptions.NOT_A_VENDOR'));
-			if (userData.email && (await m.existsBy(User, { email: userData.email, id: Not(id) })))
+			if (userData.email && (await m.findOne(User,{where:{email:userData.email}})))
 				throw new ConflictException(this.i18n.t('exceptions.EMAIL_ALREADY_USED'));
 
 			await m.save(User, Object.assign(user, userData));
@@ -131,8 +127,6 @@ export class UserService {
 	}
 
 	async setActive(userId: number, isActive: boolean, adminId: number) {
-		if (userId === adminId && !isActive) throw new BadRequestException(this.i18n.t('exceptions.CANNOT_DEACTIVATE_SELF'));
-
 		const user = await this.findById(userId);
 		await this.userRepo.update(userId, { isActive });
 		return Object.assign(user, { isActive });

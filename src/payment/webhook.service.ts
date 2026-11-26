@@ -28,7 +28,7 @@ export class StripeWebhookService {
 	) {}
 
 	async process(event: Stripe.Event) {
-		const result = await this.dataSource.transaction(async (manager) => {
+		await this.dataSource.transaction(async (manager) => {
 			await manager.insert(StripeEvent, { id: event.id, type: event.type });
 
 			switch (event.type) {

@@ -37,7 +37,6 @@ export class OrderResolver {
 	@Throttle({ default: { limit: 5, ttl: 60 * 60 * 1000 } })
 	@Mutation(() => CheckoutResult)
 	checkout(@Args() args: CheckoutArgs, @CurrentUser() user: User) {
-		if (user.role !== UserRole.Client) throw new ForbiddenException(this.i18n.t('exceptions.FORBIDDEN'));
 		return this.orderService.checkout(user.id, args.shippingAddress);
 	}
 
@@ -102,7 +101,7 @@ export class OrderResolver {
 		return order.checkout.shippingAddress;
 	}
 
-	@ResolveField(() => String, { nullable: true, description: 'only filled in the vendor views' })
+	@ResolveField(() => String)
 	clientName(@Parent() order: Order) {
 		return order.client?.fullname ?? null;
 	}

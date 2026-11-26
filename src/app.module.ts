@@ -32,7 +32,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, expandVariables: true }),
+    ConfigModule.forRoot({ isGlobal: true}),
 
     ObserveModule.forRootAsync({
       inject: [ConfigService],
@@ -77,7 +77,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
         connection: {
           host: config.get('REDIS_HOST'),
           port: Number(config.get('REDIS_PORT')),
-          enableOfflineQueue: false,
+          enableOfflineQueue: true,
         },
       }),
     }),

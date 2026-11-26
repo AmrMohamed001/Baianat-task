@@ -36,7 +36,6 @@ export abstract class CreateUserDto {
 	password: string;
 
 	@IsOptional()
-	// @IsPhoneNumber() untill knowing regions
 	@Field({ nullable: true })
 	phone?: string;
 }

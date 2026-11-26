@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { I18nService } from 'nestjs-i18n';
 import {Repository } from 'typeorm';
@@ -87,6 +87,4 @@ export class ReviewService {
 		this.query.sort(qb, 'createdAt');
 		return this.query.getPage(qb, args);
 	}
-
-	
 }

@@ -85,7 +85,6 @@ export class Vendor {
 	rejectionReason: string | null;
 
 	@CreateDateColumn()
-	@Field()
 	createdAt: Date;
 
 	@UpdateDateColumn()

@@ -15,7 +15,6 @@ type Vendor {
   reviewedBy: Int
   reviewedAt: DateTime
   rejectionReason: String
-  createdAt: DateTime!
   products: [Product!]!
 }
 
@@ -95,9 +94,7 @@ type Order {
   items: [OrderItem!]!
   createdAt: DateTime!
   shippingAddress: String!
-
-  """only filled in the vendor views"""
-  clientName: String
+  clientName: String!
   history: [OrderStatusHistory!]!
 }
 
