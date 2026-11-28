@@ -84,9 +84,9 @@ export class Vendor {
 	@Field(() => String, { nullable: true })
 	rejectionReason: string | null;
 
-	@CreateDateColumn()
+	@CreateDateColumn({ type: 'timestamptz' })
 	createdAt: Date;
 
-	@UpdateDateColumn()
+	@UpdateDateColumn({ type: 'timestamptz' })
 	updatedAt: Date;
 }

@@ -54,11 +54,11 @@ export class User {
 	@Field({ nullable: true })
 	phone: string;
 
-	@CreateDateColumn()
+	@CreateDateColumn({ type: 'timestamptz' })
 	@Field({ nullable: true })
 	createdAt: Date;
 
-	@UpdateDateColumn()
+	@UpdateDateColumn({ type: 'timestamptz' })
 	@Field({ nullable: true })
 	updatedAt: Date;
 

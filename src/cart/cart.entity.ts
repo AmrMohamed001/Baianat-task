@@ -30,9 +30,9 @@ export class Cart {
 	@Field(() => [CartItem])
 	items: CartItem[];
 
-	@CreateDateColumn()
+	@CreateDateColumn({ type: 'timestamptz' })
 	createdAt: Date;
 
-	@UpdateDateColumn()
+	@UpdateDateColumn({ type: 'timestamptz' })
 	updatedAt: Date;
 }
